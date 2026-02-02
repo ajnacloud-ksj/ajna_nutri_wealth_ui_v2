@@ -19,11 +19,11 @@ jobs:
       s3-path: ''
       
       # CloudFront Distribution ID (for cache invalidation)
-      cloudfront-distribution-id: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+      cloudfront-distribution-id: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
       
       # GitHub OIDC Role ARN (replace with your role)
       # Format: arn:aws:iam::ACCOUNT_ID:role/GitHubActionsRole
-      role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+      role-to-assume: ${{ vars.AWS_ROLE_ARN }}
       
       # Working directory (where package.json is located)
       working-directory: '.'
@@ -32,5 +32,5 @@ jobs:
       node-version: '20'
       
       # Backend API URL (injected as VITE_API_URL during build)
-      api-url: ${{ secrets.VITE_API_URL }}
+      api-url: ${{ vars.VITE_API_URL }}
     secrets: inherit

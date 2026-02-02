@@ -20,10 +20,10 @@ jobs:
       s3-bucket: 'nutriwealth-ui'
       
       # Optional: S3 path prefix (leave empty for root)
-      s3-path: ''
+      s3-path: 'ajna_nutri_wealth_ui_v2'
       
-      # CloudFront Distribution ID (for cache invalidation)
-      cloudfront-distribution-id: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+      # CloudFront Distribution ID (auto-detected from S3 bucket name)
+      cloudfront-distribution-id: ''
       
       # GitHub OIDC Role ARN (replace with your role)
       # Format: arn:aws:iam::ACCOUNT_ID:role/GitHubActionsRole

@@ -10,7 +10,7 @@ jobs:
     uses: ajnacloud-ksj/ajna-github-workflows/.github/workflows/reusable-static-site.yml@main
     with:
       # AWS Configuration
-      aws-region: 'us-east-1'
+      aws-region: 'ap-south-1'
       
       # S3 bucket for hosting static files
       s3-bucket: 'nutriwealth-ui'

@@ -17,13 +17,12 @@ jobs:
       aws-region: 'ap-south-1'
       
       # S3 bucket for hosting static files
-      s3-bucket: 'nutriwealth-ui'
+      s3-bucket: 'ajnacloud-static-websites'
       
       # Optional: S3 path prefix (leave empty for root)
       s3-path: 'ajna_nutri_wealth_ui_v2'
       
-      # CloudFront Distribution ID (auto-detected from S3 bucket name)
-      cloudfront-distribution-id: ''
+
       
       # GitHub OIDC Role ARN (replace with your role)
       # Format: arn:aws:iam::ACCOUNT_ID:role/GitHubActionsRole

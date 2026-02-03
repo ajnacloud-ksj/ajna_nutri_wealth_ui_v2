@@ -22,14 +22,7 @@ jobs:
       # Optional: S3 path prefix (leave empty for root)
       s3-path: 'ajna_nutri_wealth_ui_v2'
       
-      # CloudFront Distribution ID (auto-detected if empty)
-      cloudfront-distribution-id: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
-      
 
-      
-      # GitHub OIDC Role ARN (replace with your role)
-      # Format: arn:aws:iam::ACCOUNT_ID:role/GitHubActionsRole
-      role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
       
       # Working directory (where package.json is located)
       working-directory: '.'

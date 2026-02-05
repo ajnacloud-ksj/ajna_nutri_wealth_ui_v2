@@ -99,10 +99,10 @@ const Capture = () => {
 
       setUploadProgress('Creating analysis record...');
 
-      // Step 4: Call analyze endpoint directly
-      setUploadProgress('Analyzing with GPT-5.2...');
+      // Step 4: Call async analyze endpoint
+      setUploadProgress('Starting AI analysis...');
 
-      const analyzeResponse = await fetch('/v1/analyze', {
+      const analyzeResponse = await fetch('/v1/analyze/async', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -117,32 +117,71 @@ const Capture = () => {
 
       if (!analyzeResponse.ok) {
         const error = await analyzeResponse.json();
-        throw new Error(error.error || 'Failed to analyze');
+        throw new Error(error.error || 'Failed to start analysis');
       }
 
-      const result = await analyzeResponse.json();
+      const asyncResult = await analyzeResponse.json();
+      const entryId = asyncResult.entry_id;
 
-      // Success! Analysis completed
-      toast.success("Analysis completed! 🚀", {
-        description: `${result.summary?.description || 'Food analyzed'}: ${result.summary?.calories || 0} calories`,
-        action: {
-          label: 'View Details',
-          onClick: () => navigate(`/food/${result.entry_id}`)
-        }
+      // Show instant feedback
+      toast.success("Analysis started! 🚀", {
+        description: "Processing in background. You'll be notified when ready."
       });
 
-      // Reset form immediately - don't block UI
+      // Reset form immediately
       setFile(null);
       setDescription("");
-      setLoading(false);
-      setUploadProgress('');
+      setUploadProgress('Processing in background...');
 
-      // Optional: Navigate to dashboard after a short delay
-      setTimeout(() => {
-        navigate("/dashboard", {
-          state: { shouldRefresh: true }
-        });
-      }, 1500);
+      // Poll for results
+      let pollAttempts = 0;
+      const maxAttempts = 150; // 5 minutes max (150 * 2 seconds)
+
+      const pollInterval = setInterval(async () => {
+        pollAttempts++;
+
+        try {
+          const statusResponse = await fetch(`/v1/analyze/status/${entryId}`);
+          const statusData = await statusResponse.json();
+
+          if (statusData.status === 'completed') {
+            clearInterval(pollInterval);
+            setLoading(false);
+            setUploadProgress('');
+
+            const result = statusData.result || {};
+            toast.success("Analysis completed! 🎉", {
+              description: `${result.summary?.description || 'Food analyzed'}: ${result.summary?.calories || 0} calories`,
+              action: {
+                label: 'View Details',
+                onClick: () => navigate(`/food/${entryId}`)
+              }
+            });
+
+            setTimeout(() => {
+              navigate("/dashboard", {
+                state: { shouldRefresh: true }
+              });
+            }, 1500);
+
+          } else if (statusData.status === 'failed') {
+            clearInterval(pollInterval);
+            setLoading(false);
+            setUploadProgress('');
+            setError(statusData.error || 'Analysis failed');
+            toast.error("Analysis failed");
+
+          } else if (pollAttempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            setLoading(false);
+            setUploadProgress('');
+            toast.error("Analysis timeout - please try again");
+          }
+        } catch (pollError) {
+          console.error('Polling error:', pollError);
+          // Continue polling on error
+        }
+      }, 2000); // Poll every 2 seconds
 
     } catch (error: any) {
       console.error('Processing error:', error);

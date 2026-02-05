@@ -37,4 +37,4 @@ jobs:
       auth-mode: 'cognito'
     secrets:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
-      CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+      CLOUDFRONT_DISTRIBUTION_ID: 'E3KAGPTHZ7N8J0'

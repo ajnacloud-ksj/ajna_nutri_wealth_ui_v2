@@ -93,10 +93,12 @@ class BackendApiClient {
     }): Promise<ApiResponse<AuthResponse>> => {
       // Robust auth mode detection:
       // 1. Explicit env var
-      // 2. Production URL pattern check
-      // 3. Default to 'local'
+      // 2. Production URL pattern check (API URL)
+      // 3. UI Domain check (window.location) - FAILSAFE
       const isProductionUrl = API_BASE_URL.includes('lambda-url') || API_BASE_URL.includes('ajna.cloud') || API_BASE_URL.includes('triviz.cloud');
-      const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl ? 'cognito' : 'local');
+      const isProductionDomain = typeof window !== 'undefined' && (window.location.hostname.includes('triviz.cloud') || window.location.hostname.includes('ajna.cloud'));
+
+      const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl || isProductionDomain ? 'cognito' : 'local');
 
       if (authMode === 'cognito') {
         // Use real Cognito authentication
@@ -183,7 +185,8 @@ class BackendApiClient {
       };
     }): Promise<ApiResponse<AuthResponse>> => {
       const isProductionUrl = API_BASE_URL.includes('lambda-url') || API_BASE_URL.includes('ajna.cloud') || API_BASE_URL.includes('triviz.cloud');
-      const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl ? 'cognito' : 'local');
+      const isProductionDomain = typeof window !== 'undefined' && (window.location.hostname.includes('triviz.cloud') || window.location.hostname.includes('ajna.cloud'));
+      const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl || isProductionDomain ? 'cognito' : 'local');
 
       if (authMode === 'cognito') {
         // Use real Cognito sign up

@@ -172,8 +172,10 @@ const Auth = () => {
             {(() => {
               // Robust check for banner visibility
               const apiUrl = import.meta.env.VITE_API_URL || '';
-              const isProduction = apiUrl.includes('lambda-url') || apiUrl.includes('ajna.cloud') || apiUrl.includes('triviz.cloud');
-              const authMode = import.meta.env.VITE_AUTH_MODE || (isProduction ? 'cognito' : 'local');
+              const isProductionUrl = apiUrl.includes('lambda-url') || apiUrl.includes('ajna.cloud') || apiUrl.includes('triviz.cloud');
+              const isProductionDomain = typeof window !== 'undefined' && (window.location.hostname.includes('triviz.cloud') || window.location.hostname.includes('ajna.cloud'));
+
+              const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl || isProductionDomain ? 'cognito' : 'local');
 
               return authMode !== 'cognito' && (
                 <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">

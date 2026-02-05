@@ -185,11 +185,16 @@ const Auth = () => {
 
               const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl || isProductionDomain ? 'cognito' : 'local');
 
+              console.log('Auth Debug:', { apiUrl, isProductionUrl, hostname: window.location.hostname, isProductionDomain, authMode });
+
               return authMode !== 'cognito' && (
                 <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
-                  <strong>🔓 Mock Auth Mode:</strong> Use any email/password to login
+                  <strong>🔓 Mock Auth Mode (v3):</strong> Use any email/password to login
                   <br />
                   <span className="text-xs">Example: test@example.com / password123</span>
+                  <div className="text-[10px] mt-1 text-blue-600 font-mono">
+                    Host: {window.location.hostname} | Mode: {authMode}
+                  </div>
                 </div>
               );
             })()}

@@ -100,12 +100,30 @@ class BackendApiClient {
         // Use real Cognito authentication
         try {
           // Dynamic import to avoid bundling aws-amplify in local mode if possible
-          const { signIn, fetchAuthSession, getCurrentUser } = await import('aws-amplify/auth');
+          const { signIn, fetchAuthSession, getCurrentUser, signOut } = await import('aws-amplify/auth');
 
-          const { isSignedIn, nextStep } = await signIn({
-            username: credentials.email,
-            password: credentials.password
-          });
+          let signInResult;
+          try {
+            signInResult = await signIn({
+              username: credentials.email,
+              password: credentials.password
+            });
+          } catch (err: any) {
+            // Check for "already signed in" error
+            if (err.name === 'UserAlreadyAuthenticatedException' || err.message?.includes('already a signed in user')) {
+              console.log('User already signed in, forcing sign out and retrying...');
+              await signOut();
+              // Retry sign in
+              signInResult = await signIn({
+                username: credentials.email,
+                password: credentials.password
+              });
+            } else {
+              throw err;
+            }
+          }
+
+          const { isSignedIn, nextStep } = signInResult;
 
           if (isSignedIn) {
             const user = await getCurrentUser();

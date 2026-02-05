@@ -46,8 +46,14 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      // Determine auth mode for UI feedback
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const isProductionUrl = apiUrl.includes('lambda-url') || apiUrl.includes('ajna.cloud') || apiUrl.includes('triviz.cloud');
+      const isProductionDomain = typeof window !== 'undefined' && (window.location.hostname.includes('triviz.cloud') || window.location.hostname.includes('ajna.cloud'));
+      const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl || isProductionDomain ? 'cognito' : 'local');
+      const isMock = authMode !== 'cognito';
+
       if (isLogin) {
-        // Use mock authentication from backendApi
         const { data, error } = await backendApi.auth.signInWithPassword({
           email,
           password
@@ -57,11 +63,10 @@ const Auth = () => {
           throw error;
         }
 
-        toast.success("Successfully signed in! (Mock Auth - Any email/password works)");
+        toast.success(isMock ? "Successfully signed in! (Mock Auth)" : "Successfully signed in!");
         // Need to reload to update auth context
         window.location.href = "/dashboard";
       } else {
-        // For signup, skip verification in mock mode
         const { data, error } = await backendApi.auth.signUp({
           email,
           password,
@@ -77,7 +82,7 @@ const Auth = () => {
           throw error;
         }
 
-        toast.success("Account created successfully! (Mock Auth - Signing you in...)");
+        toast.success(isMock ? "Account created! (Mock Auth)" : "Account created! Please check your email to verify.");
 
         // Handle invitation code if present
         if (invitationCode && data?.user?.id) {
@@ -93,8 +98,15 @@ const Auth = () => {
           }
         }
 
-        // Auto sign in after signup with mock auth
-        window.location.href = "/dashboard";
+        if (isMock) {
+          // Auto sign in after signup with mock auth
+          window.location.href = "/dashboard";
+        } else {
+          // For real auth, they might need to verify email, so don't auto-redirect to dashboard immediately
+          // unless auto-signin is supported and verified.
+          // Usually with Cognito, if email verification is required, they can't sign in yet.
+          setIsLogin(true); // Switch to login view
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "Authentication failed");

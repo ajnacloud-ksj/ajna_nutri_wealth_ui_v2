@@ -329,18 +329,7 @@ class BackendApiClient {
           return { data, error: null };
         } catch (error) {
           console.error(`Error inserting into ${table}:`, error);
-          // If the table doesn't exist in backend, use localStorage fallback
-          if ((error as any).message?.includes('404')) {
-            const recordsArray = Array.isArray(records) ? records : [records];
-            const results = recordsArray.map(record => ({
-              ...record,
-              id: record.id || `mock-${Date.now()}-${Math.random()}`,
-              created_at: record.created_at || new Date().toISOString(),
-            }));
-            const existing = JSON.parse(localStorage.getItem(`mock_table_${table}`) || '[]');
-            localStorage.setItem(`mock_table_${table}`, JSON.stringify([...existing, ...results]));
-            return { data: Array.isArray(records) ? results : results[0], error: null };
-          }
+          // Production grade: Do not fail over to mock data silently
           return { data: null, error: error as Error };
         }
       },
@@ -349,13 +338,23 @@ class BackendApiClient {
         const self = this;
         return {
           eq: async function (column: string, value: any) {
-            // Mock update
-            const existing = JSON.parse(localStorage.getItem(`mock_table_${self._table}`) || '[]');
-            const updated = existing.map((item: any) =>
-              item[column] === value ? { ...item, ...updates } : item
-            );
-            localStorage.setItem(`mock_table_${self._table}`, JSON.stringify(updated));
-            return { data: updated.filter((item: any) => item[column] === value), error: null };
+            const url = `${API_BASE_URL}/v1/${self._table}?${column}=${value}`;
+            try {
+              const response = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...getAuthHeaders()
+                },
+                body: JSON.stringify(updates)
+              });
+
+              if (!response.ok) throw new Error(`HTTP ${response.status}`);
+              const data = await response.json();
+              return { data, error: null };
+            } catch (error) {
+              return { data: null, error: error as Error };
+            }
           },
         };
       },

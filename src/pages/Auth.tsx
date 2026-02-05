@@ -1,18 +1,15 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Brain, UserPlus } from "lucide-react";
-import { api } from "@/lib/api";
 import { backendApi } from "@/lib/api/client";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { InvitationCodeInput } from "@/components/auth/InvitationCodeInput";
-// Cognito imports - used when VITE_AUTH_MODE=cognito
-// import { signIn, signUp, confirmSignUp } from "aws-amplify/auth";
+import { signIn, signUp, confirmSignUp } from "aws-amplify/auth";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);

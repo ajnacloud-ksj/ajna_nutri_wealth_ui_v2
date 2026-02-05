@@ -91,52 +91,57 @@ class BackendApiClient {
       email: string;
       password: string;
     }): Promise<ApiResponse<AuthResponse>> => {
-      const authMode = import.meta.env.VITE_AUTH_MODE || 'local';
+      // Robust auth mode detection:
+      // 1. Explicit env var
+      // 2. Production URL pattern check
+      // 3. Default to 'local'
+      const isProductionUrl = API_BASE_URL.includes('lambda-url') || API_BASE_URL.includes('ajna.cloud') || API_BASE_URL.includes('triviz.cloud');
+      const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl ? 'cognito' : 'local');
 
       if (authMode === 'cognito') {
         // Use real Cognito authentication
         try {
-          const { signIn } = await import('aws-amplify/auth');
+          // Dynamic import to avoid bundling aws-amplify in local mode if possible
+          const { signIn, fetchAuthSession, getCurrentUser } = await import('aws-amplify/auth');
+
           const { isSignedIn, nextStep } = await signIn({
             username: credentials.email,
             password: credentials.password
           });
 
           if (isSignedIn) {
-            // Get user session
-            const { fetchAuthSession, fetchUserAttributes } = await import('aws-amplify/auth');
+            const user = await getCurrentUser();
             const session = await fetchAuthSession();
-            const attributes = await fetchUserAttributes();
 
-            const user: User = {
-              id: attributes.sub || credentials.email,
-              email: attributes.email || credentials.email,
+            const userInfo: User = {
+              id: user.userId,
+              email: credentials.email, // Cognito doesn't return email in user object easily without extra fetch
               user_metadata: {
-                full_name: attributes.name,
-                user_type: 'participant'
+                user_type: 'participant' // Default for now
               }
             };
 
             const token = session.tokens?.idToken?.toString() || '';
             this.authToken = token;
             localStorage.setItem('auth_token', token);
-            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('user', JSON.stringify(userInfo));
 
             return {
               data: {
-                user,
+                user: userInfo,
                 session: {
                   access_token: token,
-                  user
+                  user: userInfo
                 }
               },
               error: null
             };
           }
 
-          return { data: null, error: new Error('Sign in failed') };
-        } catch (error) {
-          return { data: null, error: error as Error };
+          return { data: null, error: new Error('Sign in incomplete or failed') };
+        } catch (error: any) {
+          console.error('Cognito sign in error:', error);
+          return { data: null, error: error };
         }
       }
 
@@ -177,7 +182,8 @@ class BackendApiClient {
         };
       };
     }): Promise<ApiResponse<AuthResponse>> => {
-      const authMode = import.meta.env.VITE_AUTH_MODE || 'local';
+      const isProductionUrl = API_BASE_URL.includes('lambda-url') || API_BASE_URL.includes('ajna.cloud') || API_BASE_URL.includes('triviz.cloud');
+      const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl ? 'cognito' : 'local');
 
       if (authMode === 'cognito') {
         // Use real Cognito sign up

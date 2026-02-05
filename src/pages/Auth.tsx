@@ -169,13 +169,20 @@ const Auth = () => {
                 autoFilled={!!searchParams.get('invite')}
               />
             )}
-            {import.meta.env.VITE_AUTH_MODE !== 'cognito' && (
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
-                <strong>🔓 Mock Auth Mode:</strong> Use any email/password to login
-                <br />
-                <span className="text-xs">Example: test@example.com / password123</span>
-              </div>
-            )}
+            {(() => {
+              // Robust check for banner visibility
+              const apiUrl = import.meta.env.VITE_API_URL || '';
+              const isProduction = apiUrl.includes('lambda-url') || apiUrl.includes('ajna.cloud') || apiUrl.includes('triviz.cloud');
+              const authMode = import.meta.env.VITE_AUTH_MODE || (isProduction ? 'cognito' : 'local');
+
+              return authMode !== 'cognito' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
+                  <strong>🔓 Mock Auth Mode:</strong> Use any email/password to login
+                  <br />
+                  <span className="text-xs">Example: test@example.com / password123</span>
+                </div>
+              );
+            })()}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
             </Button>

@@ -48,8 +48,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signOut = async () => {
     try {
-      const { error } = await backendApi.auth.signOut();
-      if (error) throw error;
+      // Check if we need to sign out from Cognito
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const isProduction = apiUrl.includes('lambda-url') || apiUrl.includes('ajna.cloud') || apiUrl.includes('triviz.cloud');
+      const authMode = import.meta.env.VITE_AUTH_MODE || (isProduction ? 'cognito' : 'local');
+
+      if (authMode === 'cognito') {
+        try {
+          const { signOut } = await import('aws-amplify/auth');
+          await signOut();
+          localStorage.removeItem('auth_token'); // Clear local token too
+        } catch (cognitoError) {
+          console.error('Cognito sign out error:', cognitoError);
+        }
+      } else {
+        // Mock sign out
+        const { error } = await backendApi.auth.signOut();
+        if (error) throw error;
+      }
+
       setUser(null);
     } catch (error) {
       console.error('Sign out failed:', error);

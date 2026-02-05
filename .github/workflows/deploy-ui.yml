@@ -32,6 +32,9 @@ jobs:
       
       # Backend API URL (injected as VITE_API_URL during build)
       api-url: ${{ vars.VITE_API_URL }}
+      
+      # Auth mode: 'local' or 'cognito'
+      auth-mode: 'cognito'
     secrets:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
       CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}

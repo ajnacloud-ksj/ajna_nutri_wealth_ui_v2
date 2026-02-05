@@ -9,7 +9,6 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { InvitationCodeInput } from "@/components/auth/InvitationCodeInput";
-import { signIn, signUp, confirmSignUp } from "aws-amplify/auth";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);

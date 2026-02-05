@@ -11,7 +11,8 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { InvitationCodeInput } from "@/components/auth/InvitationCodeInput";
-// import { signIn, signUp, confirmSignUp } from "aws-amplify/auth"; // Commented out - using mock auth
+// Cognito imports - used when VITE_AUTH_MODE=cognito
+// import { signIn, signUp, confirmSignUp } from "aws-amplify/auth";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -121,8 +122,8 @@ const Auth = () => {
             {isLogin
               ? "Sign in to your account"
               : invitationCode
-                  ? "Complete your signup to join as a caretaker"
-                  : "Start your health journey today"
+                ? "Complete your signup to join as a caretaker"
+                : "Start your health journey today"
             }
           </CardDescription>
         </CardHeader>
@@ -168,40 +169,42 @@ const Auth = () => {
                 autoFilled={!!searchParams.get('invite')}
               />
             )}
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
-              <strong>🔓 Mock Auth Mode:</strong> Use any email/password to login
-              <br />
-              <span className="text-xs">Example: test@example.com / password123</span>
-            </div>
+            {import.meta.env.VITE_AUTH_MODE !== 'cognito' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
+                <strong>🔓 Mock Auth Mode:</strong> Use any email/password to login
+                <br />
+                <span className="text-xs">Example: test@example.com / password123</span>
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
             </Button>
           </form>
 
           <div className="mt-4 text-center space-y-2">
-              <Button
-                variant="link"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm"
-              >
-                {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
-              </Button>
+            <Button
+              variant="link"
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-sm"
+            >
+              {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
+            </Button>
 
-              {isLogin && (
-                <div className="pt-2 border-t">
-                  <div className="text-sm text-gray-500 mb-2">
-                    Have an invitation code?
-                  </div>
-                  <Link
-                    to="/join"
-                    className="text-sm text-blue-600 hover:text-blue-800 underline flex items-center justify-center gap-1"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Join as Caretaker
-                  </Link>
+            {isLogin && (
+              <div className="pt-2 border-t">
+                <div className="text-sm text-gray-500 mb-2">
+                  Have an invitation code?
                 </div>
-              )}
-            </div>
+                <Link
+                  to="/join"
+                  className="text-sm text-blue-600 hover:text-blue-800 underline flex items-center justify-center gap-1"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Join as Caretaker
+                </Link>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

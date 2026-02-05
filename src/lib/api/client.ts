@@ -91,8 +91,56 @@ class BackendApiClient {
       email: string;
       password: string;
     }): Promise<ApiResponse<AuthResponse>> => {
-      // For now, use mock authentication
-      // In local mode, always use consistent dev user
+      const authMode = import.meta.env.VITE_AUTH_MODE || 'local';
+
+      if (authMode === 'cognito') {
+        // Use real Cognito authentication
+        try {
+          const { signIn } = await import('aws-amplify/auth');
+          const { isSignedIn, nextStep } = await signIn({
+            username: credentials.email,
+            password: credentials.password
+          });
+
+          if (isSignedIn) {
+            // Get user session
+            const { fetchAuthSession, fetchUserAttributes } = await import('aws-amplify/auth');
+            const session = await fetchAuthSession();
+            const attributes = await fetchUserAttributes();
+
+            const user: User = {
+              id: attributes.sub || credentials.email,
+              email: attributes.email || credentials.email,
+              user_metadata: {
+                full_name: attributes.name,
+                user_type: 'participant'
+              }
+            };
+
+            const token = session.tokens?.idToken?.toString() || '';
+            this.authToken = token;
+            localStorage.setItem('auth_token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+
+            return {
+              data: {
+                user,
+                session: {
+                  access_token: token,
+                  user
+                }
+              },
+              error: null
+            };
+          }
+
+          return { data: null, error: new Error('Sign in failed') };
+        } catch (error) {
+          return { data: null, error: error as Error };
+        }
+      }
+
+      // Mock authentication for local development
       const mockUser: User = {
         id: IS_LOCAL_MODE ? LOCAL_USER.id : credentials.email.split('@')[0],
         email: credentials.email,
@@ -129,6 +177,46 @@ class BackendApiClient {
         };
       };
     }): Promise<ApiResponse<AuthResponse>> => {
+      const authMode = import.meta.env.VITE_AUTH_MODE || 'local';
+
+      if (authMode === 'cognito') {
+        // Use real Cognito sign up
+        try {
+          const { signUp } = await import('aws-amplify/auth');
+          const { isSignUpComplete, userId, nextStep } = await signUp({
+            username: credentials.email,
+            password: credentials.password,
+            options: {
+              userAttributes: {
+                email: credentials.email,
+                name: credentials.options?.data?.full_name || ''
+              }
+            }
+          });
+
+          // Return user data (they'll need to verify email)
+          const user: User = {
+            id: userId || credentials.email,
+            email: credentials.email,
+            user_metadata: {
+              full_name: credentials.options?.data?.full_name,
+              user_type: credentials.options?.data?.user_type || 'participant'
+            }
+          };
+
+          return {
+            data: {
+              user,
+              session: null // No session until email verified
+            },
+            error: null
+          };
+        } catch (error) {
+          return { data: null, error: error as Error };
+        }
+      }
+
+      // Mock sign up for local development
       const { data: userData, error: userError } = await this.request<any>('/users', {
         method: 'POST',
         body: JSON.stringify({
@@ -205,12 +293,12 @@ class BackendApiClient {
       _limitCount: null as number | null,
       _selectColumns: '*',
 
-      select: function(columns = '*') {
+      select: function (columns = '*') {
         this._selectColumns = columns;
         return this;
       },
 
-      insert: async function(records: any | any[]) {
+      insert: async function (records: any | any[]) {
         try {
           const response = await fetch(`${API_BASE_URL}/v1/${table}`, {
             method: 'POST',
@@ -248,10 +336,10 @@ class BackendApiClient {
         }
       },
 
-      update: function(updates: any) {
+      update: function (updates: any) {
         const self = this;
         return {
-          eq: async function(column: string, value: any) {
+          eq: async function (column: string, value: any) {
             // Mock update
             const existing = JSON.parse(localStorage.getItem(`mock_table_${self._table}`) || '[]');
             const updated = existing.map((item: any) =>
@@ -263,10 +351,10 @@ class BackendApiClient {
         };
       },
 
-      delete: function() {
+      delete: function () {
         const self = this;
         return {
-          eq: async function(column: string, value: any) {
+          eq: async function (column: string, value: any) {
             // Mock delete
             const existing = JSON.parse(localStorage.getItem(`mock_table_${self._table}`) || '[]');
             const filtered = existing.filter((item: any) => item[column] !== value);
@@ -277,57 +365,57 @@ class BackendApiClient {
       },
 
       // Query filters (chainable)
-      eq: function(column: string, value: any) {
+      eq: function (column: string, value: any) {
         this._filters.push({ column, operator: 'eq', value });
         return this;
       },
 
-      neq: function(column: string, value: any) {
+      neq: function (column: string, value: any) {
         this._filters.push({ column, operator: 'neq', value });
         return this;
       },
 
-      gt: function(column: string, value: any) {
+      gt: function (column: string, value: any) {
         this._filters.push({ column, operator: 'gt', value });
         return this;
       },
 
-      gte: function(column: string, value: any) {
+      gte: function (column: string, value: any) {
         this._filters.push({ column, operator: 'gte', value });
         return this;
       },
 
-      lt: function(column: string, value: any) {
+      lt: function (column: string, value: any) {
         this._filters.push({ column, operator: 'lt', value });
         return this;
       },
 
-      lte: function(column: string, value: any) {
+      lte: function (column: string, value: any) {
         this._filters.push({ column, operator: 'lte', value });
         return this;
       },
 
-      in: function(column: string, values: any[]) {
+      in: function (column: string, values: any[]) {
         this._filters.push({ column, operator: 'in', value: values });
         return this;
       },
 
-      is: function(column: string, value: any) {
+      is: function (column: string, value: any) {
         this._filters.push({ column, operator: 'is', value });
         return this;
       },
 
-      order: function(column: string, options?: { ascending?: boolean }) {
+      order: function (column: string, options?: { ascending?: boolean }) {
         this._orderBy = { column, ascending: options?.ascending ?? true };
         return this;
       },
 
-      limit: function(count: number) {
+      limit: function (count: number) {
         this._limitCount = count;
         return this;
       },
 
-      single: async function() {
+      single: async function () {
         const result = await this.execute();
         if (result.error) return { data: null, error: result.error };
         const data = result.data;
@@ -338,7 +426,7 @@ class BackendApiClient {
       },
 
       // Execute the query - Use real backend API with fallback
-      execute: async function() {
+      execute: async function () {
         try {
           // Build query parameters - use simple format for backend
           const params = new URLSearchParams();
@@ -408,7 +496,7 @@ class BackendApiClient {
       },
 
       // Make it thenable for async/await
-      then: async function(resolve: any, reject: any) {
+      then: async function (resolve: any, reject: any) {
         try {
           const result = await this.execute();
           resolve(result);

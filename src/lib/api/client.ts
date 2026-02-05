@@ -136,6 +136,12 @@ class BackendApiClient {
             };
           }
 
+          if (nextStep?.signInStep === 'CONFIRM_SIGN_UP') {
+            const error = new Error('User is not confirmed.');
+            error.name = 'UserNotConfirmedException';
+            return { data: null, error };
+          }
+
           return { data: null, error: new Error('Sign in incomplete or failed') };
         } catch (error: any) {
           console.error('Cognito sign in error:', error);

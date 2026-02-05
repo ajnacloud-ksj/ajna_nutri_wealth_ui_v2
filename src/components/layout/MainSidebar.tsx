@@ -1,24 +1,20 @@
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { 
-  Brain, 
-  Camera, 
-  FileText, 
-  Utensils, 
-  Dumbbell, 
-  BarChart3, 
-  CreditCard, 
-  Settings, 
+import {
+  Brain,
+  Camera,
+  FileText,
+  Utensils,
+  Dumbbell,
+  BarChart3,
+  CreditCard,
   LogOut,
   Home,
-  Users,
   Shield
 } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUserType } from "@/contexts/UserTypeContext";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import PWAUpdateIcon from "@/components/pwa/PWAUpdateIcon";
@@ -38,27 +34,28 @@ export const MainSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userType } = useUserType();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    const checkUserStatus = async () => {
       if (!user) return;
-      
+
       try {
         const { data: userData } = await backendApi
           .from('users')
-          .select('role')
+          .select('role, is_subscribed')
           .eq('id', user.id)
           .single();
-        
+
         setIsAdmin(userData?.role === 'admin');
+        setIsSubscribed(userData?.is_subscribed || false);
       } catch (error) {
-        console.error('Error checking admin status:', error);
+        console.error('Error checking user status:', error);
       }
     };
 
-    checkAdminStatus();
+    checkUserStatus();
   }, [user]);
 
   const handleSignOut = async () => {
@@ -70,24 +67,23 @@ export const MainSidebar = () => {
     }
   };
 
-  const navigationItems = [
+  const mainNavigationItems = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Capture", href: "/capture", icon: Camera },
-    { name: "Food Analysis", href: "/food", icon: Utensils },
+    { name: "Food", href: "/food", icon: Utensils },
     { name: "Receipts", href: "/receipts", icon: FileText },
     { name: "Workouts", href: "/workouts", icon: Dumbbell },
     { name: "Insights", href: "/insights", icon: BarChart3 },
-    { name: "Billing", href: "/billing", icon: CreditCard },
   ];
 
-  const settingsItems = [
-    { name: "Invite Caretakers", href: "/invite-caretakers", icon: Users },
-    { name: "Settings", href: "/participant", icon: Settings },
+  // Only show billing if user is not subscribed or needs to manage subscription
+  const accountItems = [
+    ...((!isSubscribed || isAdmin) ? [{ name: "Billing", href: "/billing", icon: CreditCard }] : []),
   ];
 
-  const adminItems = [
-    { name: "Admin Dashboard", href: "/admin", icon: Shield },
-  ];
+  const adminItems = isAdmin ? [
+    { name: "Admin", href: "/admin", icon: Shield },
+  ] : [];
 
   return (
     <>
@@ -100,132 +96,102 @@ export const MainSidebar = () => {
           <PWAUpdateIcon />
         </div>
       </SidebarHeader>
-      
-      <SidebarContent className="px-2 py-2 group-data-[collapsible=icon]:px-1">
+
+      <SidebarContent className="bg-white">
+        {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-green-700 font-semibold text-xs mb-1 group-data-[collapsible=icon]:sr-only">
-            Health Tracking
+          <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Main Menu
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-                
-                return (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton 
-                      asChild 
-                      isActive={isActive}
-                      tooltip={item.name}
-                      className="h-9 hover:bg-green-50 hover:text-green-700 data-[active=true]:bg-green-100 data-[active=true]:text-green-700 group-data-[collapsible=icon]:h-10"
-                    >
-                      <Link to={item.href} className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-                        <Icon className="h-5 w-5 flex-shrink-0" />
-                        <span className="font-medium text-sm group-data-[collapsible=icon]:hidden">{item.name}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              {mainNavigationItems.map((item) => (
+                <SidebarMenuItem key={item.name}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === item.href}
+                  >
+                    <Link to={item.href} className="flex items-center gap-3">
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.name}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-3">
-          <SidebarGroupLabel className="text-green-700 font-semibold text-xs mb-1 group-data-[collapsible=icon]:sr-only">
-            Account
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {settingsItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-                
-                return (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton 
-                      asChild 
-                      isActive={isActive}
-                      tooltip={item.name}
-                      className="h-9 hover:bg-green-50 hover:text-green-700 data-[active=true]:bg-green-100 data-[active=true]:text-green-700 group-data-[collapsible=icon]:h-10"
-                    >
-                      <Link to={item.href} className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-                        <Icon className="h-5 w-5 flex-shrink-0" />
-                        <span className="font-medium text-sm group-data-[collapsible=icon]:hidden">{item.name}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {isAdmin && (
-          <SidebarGroup className="mt-3">
-            <SidebarGroupLabel className="text-red-700 font-semibold text-xs mb-1 group-data-[collapsible=icon]:sr-only">
-              Administration
+        {/* Account & Admin Section */}
+        {(accountItems.length > 0 || adminItems.length > 0) && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Account
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {adminItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.href;
-                  
-                  return (
-                    <SidebarMenuItem key={item.name}>
-                      <SidebarMenuButton 
-                        asChild 
-                        isActive={isActive}
-                        tooltip={item.name}
-                        className="h-9 hover:bg-red-50 hover:text-red-700 data-[active=true]:bg-red-100 data-[active=true]:text-red-700 group-data-[collapsible=icon]:h-10"
-                      >
-                        <Link to={item.href} className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-                          <Icon className="h-5 w-5 flex-shrink-0" />
-                          <span className="font-medium text-sm group-data-[collapsible=icon]:hidden">{item.name}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
+                {accountItems.map((item) => (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === item.href}
+                    >
+                      <Link to={item.href} className="flex items-center gap-3">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.name}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+                {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === item.href}
+                    >
+                      <Link to={item.href} className="flex items-center gap-3">
+                        <item.icon className="h-4 w-4 text-red-600" />
+                        <span className="font-medium">{item.name}</span>
+                        <Badge variant="destructive" className="ml-auto">Admin</Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-green-200/50 p-2 mt-auto">
-        {user && (
-          <div className="mb-2 p-2 bg-green-50 rounded-lg group-data-[collapsible=icon]:p-1">
-            <div className="flex items-center gap-3 mb-2 group-data-[collapsible=icon]:mb-0 group-data-[collapsible=icon]:justify-center">
-              <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
-                {user.email?.charAt(0).toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-                <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
-              </div>
+      <SidebarFooter className="border-t border-gray-200 bg-gray-50 p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="h-8 w-8 rounded-full bg-green-600 text-white flex items-center justify-center font-semibold group-data-[collapsible=icon]:mx-auto">
+              {user?.email?.[0]?.toUpperCase() || 'U'}
             </div>
-            <div className="group-data-[collapsible=icon]:hidden">
-              <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
-                {userType === 'participant' ? 'Patient' : 'User'}
-                {isAdmin && <span className="ml-1 text-red-600">• Admin</span>}
-              </Badge>
+            <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {user?.email || 'User'}
+              </p>
+              <div className="flex items-center gap-2">
+                {isAdmin && (
+                  <Badge variant="destructive" className="text-xs">Admin</Badge>
+                )}
+                {isSubscribed && (
+                  <Badge variant="default" className="text-xs">Pro</Badge>
+                )}
+              </div>
             </div>
           </div>
-        )}
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              onClick={handleSignOut}
-              tooltip="Sign Out"
-              className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100 h-9 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:justify-center"
-            >
-              <LogOut className="h-5 w-5 flex-shrink-0" />
-              <span className="font-medium text-sm group-data-[collapsible=icon]:hidden">Sign Out</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSignOut}
+            className="text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
       </SidebarFooter>
     </>
   );

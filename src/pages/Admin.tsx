@@ -8,6 +8,7 @@ import SidebarLayout from "@/components/layout/SidebarLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import SimpleModelManager from "@/components/admin/SimpleModelManager";
+import EnhancedUserManagement from "@/components/admin/EnhancedUserManagement";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -78,11 +79,16 @@ const Admin = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="dashboard" className="space-y-4">
+        <Tabs defaultValue="users" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="dashboard">Analytics</TabsTrigger>
             <TabsTrigger value="models">AI Models</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="users">
+            <EnhancedUserManagement />
+          </TabsContent>
 
           <TabsContent value="dashboard">
             <AdminDashboard />

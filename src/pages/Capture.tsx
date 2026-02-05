@@ -102,25 +102,12 @@ const Capture = () => {
       // Step 4: Call async analyze endpoint
       setUploadProgress('Starting AI analysis...');
 
-      const analyzeResponse = await fetch('/v1/analyze/async', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('mock_token') || user.id}`
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          description: description || 'AI-analyzed content',
-          image_url: fileUrl || ''
-        })
+      const { data: asyncResult } = await api.post('/v1/analyze/async', {
+        user_id: user.id,
+        description: description || 'AI-analyzed content',
+        image_url: fileUrl || ''
       });
 
-      if (!analyzeResponse.ok) {
-        const error = await analyzeResponse.json();
-        throw new Error(error.error || 'Failed to start analysis');
-      }
-
-      const asyncResult = await analyzeResponse.json();
       const entryId = asyncResult.entry_id;
 
       // Show instant feedback
@@ -141,8 +128,7 @@ const Capture = () => {
         pollAttempts++;
 
         try {
-          const statusResponse = await fetch(`/v1/analyze/status/${entryId}`);
-          const statusData = await statusResponse.json();
+          const { data: statusData } = await api.get(`/v1/analyze/status/${entryId}`);
 
           if (statusData.status === 'completed') {
             clearInterval(pollInterval);

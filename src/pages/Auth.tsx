@@ -77,6 +77,12 @@ const Auth = () => {
         });
 
         if (error) {
+          // specific check for unconfirmed user
+          if (error.name === 'UserNotConfirmedException' || error.message?.includes('not confirmed')) {
+            setNeedsVerification(true);
+            toast.info("Please verify your email with the code sent.");
+            return;
+          }
           throw error;
         }
 

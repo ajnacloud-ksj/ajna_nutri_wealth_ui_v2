@@ -43,7 +43,7 @@ import { fetchAuthSession } from 'aws-amplify/auth';
 export const getAuthToken = async (): Promise<string | null> => {
     try {
         const session = await fetchAuthSession();
-        return session.tokens?.accessToken?.toString() || localStorage.getItem('mock_token');
+        return session.tokens?.idToken?.toString() || localStorage.getItem('mock_token');
     } catch (e) {
         return localStorage.getItem('mock_token');
     }
@@ -266,11 +266,11 @@ export const api = {
             _orderBy: null as any,
             _limitCount: null as number | null,
 
-            select: function(columns = '*') {
+            select: function (columns = '*') {
                 return this;
             },
 
-            insert: async function(records: any) {
+            insert: async function (records: any) {
                 try {
                     console.log(`Inserting into ${this._table}:`, records);
                     const response = await client.post(`/v1/${this._table}`, records);
@@ -281,7 +281,7 @@ export const api = {
                 }
             },
 
-            delete: async function() {
+            delete: async function () {
                 try {
                     // Build the DELETE request URL with filters
                     const params = new URLSearchParams();
@@ -306,7 +306,7 @@ export const api = {
                 }
             },
 
-            update: async function(updates: any) {
+            update: async function (updates: any) {
                 try {
                     // Find the ID from filters
                     for (const filter of this._filters) {
@@ -326,22 +326,22 @@ export const api = {
                 }
             },
 
-            eq: function(column: string, value: any) {
+            eq: function (column: string, value: any) {
                 this._filters.push({ column, op: 'eq', value });
                 return this;
             },
 
-            order: function(column: string, options?: any) {
+            order: function (column: string, options?: any) {
                 this._orderBy = { column, ascending: options?.ascending ?? true };
                 return this;
             },
 
-            limit: function(count: number) {
+            limit: function (count: number) {
                 this._limitCount = count;
                 return this;
             },
 
-            single: async function() {
+            single: async function () {
                 const result = await this.execute();
                 if (!result.data || result.data.length === 0) {
                     return { data: null, error: new Error('No rows found') };
@@ -349,7 +349,7 @@ export const api = {
                 return { data: result.data[0], error: null };
             },
 
-            execute: async function() {
+            execute: async function () {
                 try {
                     // Build query parameters - use simple format for backend
                     const params = new URLSearchParams();
@@ -391,7 +391,7 @@ export const api = {
                 }
             },
 
-            then: async function(resolve: any, reject: any) {
+            then: async function (resolve: any, reject: any) {
                 try {
                     const result = await this.execute();
                     resolve(result);

@@ -13,7 +13,7 @@ const API_BASE_URL = import.meta.env.DEV
 
 // Helper to get auth headers
 function getAuthHeaders() {
-  const token = localStorage.getItem('mock_token') || 'dev-user-1';
+  const token = localStorage.getItem('auth_token') || localStorage.getItem('mock_token') || 'dev-user-1';
   return {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'

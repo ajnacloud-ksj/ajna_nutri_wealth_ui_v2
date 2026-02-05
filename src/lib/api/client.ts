@@ -243,6 +243,29 @@ class BackendApiClient {
       });
     },
 
+    confirmSignUp: async (username: string, code: string): Promise<ApiResponse<void>> => {
+      const isProductionUrl = API_BASE_URL.includes('lambda-url') || API_BASE_URL.includes('ajna.cloud') || API_BASE_URL.includes('triviz.cloud');
+      const isProductionDomain = typeof window !== 'undefined' && (window.location.hostname.includes('triviz.cloud') || window.location.hostname.includes('ajna.cloud'));
+      const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl || isProductionDomain ? 'cognito' : 'local');
+
+      if (authMode === 'cognito') {
+        try {
+          const { confirmSignUp } = await import('aws-amplify/auth');
+          await confirmSignUp({
+            username,
+            confirmationCode: code
+          });
+          return { data: undefined, error: null };
+        } catch (error) {
+          console.error('Cognito confirm sign up error:', error);
+          return { data: null, error: error as Error };
+        }
+      }
+
+      // Mock confirmation
+      return { data: undefined, error: null };
+    },
+
     signOut: async (): Promise<ApiResponse<void>> => {
       this.authToken = null;
       localStorage.removeItem('auth_token');

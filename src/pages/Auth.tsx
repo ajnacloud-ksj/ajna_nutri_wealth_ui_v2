@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,25 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
-  const handleAuth = async (e: React.FormEvent) => {
+  const handleVerification = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await backendApi.auth.confirmSignUp(email, verificationCode);
+      if (error) throw error;
+
+      toast.success("Account verified successfully! Please sign in.");
+      setNeedsVerification(false);
+      setIsLogin(true);
+    } catch (error: any) {
+      toast.error(error.message || "Verification failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAuth = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -81,7 +99,7 @@ const Auth = () => {
           throw error;
         }
 
-        toast.success(isMock ? "Account created! (Mock Auth)" : "Account created! Please check your email to verify.");
+        toast.success(isMock ? "Account created! (Mock Auth)" : "Account created! Please check your email for the verification code.");
 
         // Handle invitation code if present
         if (invitationCode && data?.user?.id) {
@@ -101,10 +119,8 @@ const Auth = () => {
           // Auto sign in after signup with mock auth
           window.location.href = "/dashboard";
         } else {
-          // For real auth, they might need to verify email, so don't auto-redirect to dashboard immediately
-          // unless auto-signin is supported and verified.
-          // Usually with Cognito, if email verification is required, they can't sign in yet.
-          setIsLogin(true); // Switch to login view
+          // For real auth, activate verification step
+          setNeedsVerification(true);
         }
       }
     } catch (error: any) {
@@ -124,84 +140,118 @@ const Auth = () => {
           </div>
           <CardTitle className="flex items-center justify-center gap-2">
             {invitationCode && <UserPlus className="h-5 w-5 text-green-600" />}
-            {isLogin ? "Welcome Back" : invitationCode ? "Join as Caretaker" : "Create Account"}
+            {needsVerification
+              ? "Verify Email"
+              : isLogin ? "Welcome Back" : invitationCode ? "Join as Caretaker" : "Create Account"
+            }
           </CardTitle>
           <CardDescription>
-            {isLogin
-              ? "Sign in to your account"
-              : invitationCode
-                ? "Complete your signup to join as a caretaker"
-                : "Start your health journey today"
+            {needsVerification
+              ? `Enter the code sent to ${email}`
+              : isLogin
+                ? "Sign in to your account"
+                : invitationCode
+                  ? "Complete your signup to join as a caretaker"
+                  : "Start your health journey today"
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAuth} className="space-y-4">
-            {!isLogin && (
+          {needsVerification ? (
+            <form onSubmit={handleVerification} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="verificationCode">Verification Code</Label>
                 <Input
-                  id="fullName"
+                  id="verificationCode"
                   type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="e.g. 123456"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
                   required
                 />
               </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            {!isLogin && (
-              <InvitationCodeInput
-                value={invitationCode}
-                onChange={setInvitationCode}
-                disabled={loading}
-                autoFilled={!!searchParams.get('invite')}
-              />
-            )}
-            {(() => {
-              // Robust check for banner visibility
-              const apiUrl = import.meta.env.VITE_API_URL || '';
-              const isProductionUrl = apiUrl.includes('lambda-url') || apiUrl.includes('ajna.cloud') || apiUrl.includes('triviz.cloud');
-              const isProductionDomain = typeof window !== 'undefined' && (window.location.hostname.includes('triviz.cloud') || window.location.hostname.includes('ajna.cloud'));
-
-              const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl || isProductionDomain ? 'cognito' : 'local');
-
-              console.log('Auth Debug:', { apiUrl, isProductionUrl, hostname: window.location.hostname, isProductionDomain, authMode });
-
-              return authMode !== 'cognito' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
-                  <strong>🔓 Mock Auth Mode (v3):</strong> Use any email/password to login
-                  <br />
-                  <span className="text-xs">Example: test@example.com / password123</span>
-                  <div className="text-[10px] mt-1 text-blue-600 font-mono">
-                    Host: {window.location.hostname} | Mode: {authMode}
-                  </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Verifying..." : "Verify Account"}
+              </Button>
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-sm"
+                  onClick={() => setNeedsVerification(false)}
+                >
+                  Back to Sign Up
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleAuth} className="space-y-4">
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
                 </div>
-              );
-            })()}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
-            </Button>
-          </form>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              {!isLogin && (
+                <InvitationCodeInput
+                  value={invitationCode}
+                  onChange={setInvitationCode}
+                  disabled={loading}
+                  autoFilled={!!searchParams.get('invite')}
+                />
+              )}
+              {(() => {
+                // Robust check for banner visibility
+                const apiUrl = import.meta.env.VITE_API_URL || '';
+                const isProductionUrl = apiUrl.includes('lambda-url') || apiUrl.includes('ajna.cloud') || apiUrl.includes('triviz.cloud');
+                const isProductionDomain = typeof window !== 'undefined' && (window.location.hostname.includes('triviz.cloud') || window.location.hostname.includes('ajna.cloud'));
+
+                const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl || isProductionDomain ? 'cognito' : 'local');
+
+                console.log('Auth Debug:', { apiUrl, isProductionUrl, hostname: window.location.hostname, isProductionDomain, authMode });
+
+                return authMode !== 'cognito' && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
+                    <strong>🔓 Mock Auth Mode (v3):</strong> Use any email/password to login
+                    <br />
+                    <span className="text-xs">Example: test@example.com / password123</span>
+                    <div className="text-[10px] mt-1 text-blue-600 font-mono">
+                      Host: {window.location.hostname} | Mode: {authMode}
+                    </div>
+                  </div>
+                );
+              })()}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
+              </Button>
+            </form>
+          )}
 
           <div className="mt-4 text-center space-y-2">
             <Button

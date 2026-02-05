@@ -91,10 +91,6 @@ class BackendApiClient {
       email: string;
       password: string;
     }): Promise<ApiResponse<AuthResponse>> => {
-      // Robust auth mode detection:
-      // 1. Explicit env var
-      // 2. Production URL pattern check (API URL)
-      // 3. UI Domain check (window.location) - FAILSAFE
       const isProductionUrl = API_BASE_URL.includes('lambda-url') || API_BASE_URL.includes('ajna.cloud') || API_BASE_URL.includes('triviz.cloud');
       const isProductionDomain = typeof window !== 'undefined' && (window.location.hostname.includes('triviz.cloud') || window.location.hostname.includes('ajna.cloud'));
 

@@ -31,7 +31,8 @@ jobs:
       node-version: '20'
       
       # Backend API URL (injected as VITE_API_URL during build)
-      api-url: ${{ vars.VITE_API_URL }}
+      # Backend API URL (hardcoded per user request)
+      api-url: 'https://u5m63wnxrakgzxggb5ppfccuju0bkyvg.lambda-url.ap-south-1.on.aws/'
       
       # Auth mode: 'local' or 'cognito'
       auth-mode: 'cognito'

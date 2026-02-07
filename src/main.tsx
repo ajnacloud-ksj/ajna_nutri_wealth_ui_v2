@@ -66,7 +66,14 @@ async function init() {
   }
   const root = createRoot(container);
 
-  // Only configure Amplify in production/cloud mode
+  // Render the app immediately to avoid blank screen
+  root.render(
+    <React.StrictMode>
+      <AppOptimized />
+    </React.StrictMode>
+  );
+
+  // Configure Amplify after initial render if needed
   if (AUTH_MODE === 'cognito' && !IS_DEVELOPMENT) {
     try {
       // In production, fetch auth config from backend
@@ -96,16 +103,11 @@ async function init() {
       }
     } catch (error) {
       console.error('Failed to configure Cognito:', error);
+      // Don't throw - app should still work without Cognito
     }
   } else {
     console.log(`🔧 Running in ${IS_DEVELOPMENT ? 'development' : AUTH_MODE} mode`);
   }
-
-  root.render(
-    <React.StrictMode>
-      <AppOptimized />
-    </React.StrictMode>
-  );
 }
 
-init();
+init().catch(console.error);

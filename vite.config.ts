@@ -41,24 +41,9 @@ export default defineConfig(({ mode }) => ({
         pure_funcs: ['console.log', 'console.info'],
       },
     },
-    // Optimize chunk splitting
+    // Let Vite handle chunk splitting automatically to avoid dependency issues
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Split vendor chunks for better caching
-          if (id.includes('node_modules')) {
-            // Keep React and its related packages together with main vendor
-            // to avoid context initialization issues
-            if (id.includes('aws-amplify')) {
-              return 'aws-vendor';
-            }
-            if (id.includes('recharts') || id.includes('d3')) {
-              return 'charts-vendor';
-            }
-            // All other vendor code including React, Radix UI, and tanstack
-            return 'vendor';
-          }
-        },
         // Use content hash for better caching
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
@@ -75,15 +60,12 @@ export default defineConfig(({ mode }) => ({
     assetsInlineLimit: 4096, // Inline assets smaller than 4kb
   },
   optimizeDeps: {
-    // Pre-bundle heavy dependencies
+    // Pre-bundle common dependencies
     include: [
       'react',
       'react-dom',
       'react-router-dom',
-      '@tanstack/react-query',
     ],
-    // Exclude dependencies that should be dynamically imported
-    exclude: ['aws-amplify'],
   },
   plugins: [
     react(),

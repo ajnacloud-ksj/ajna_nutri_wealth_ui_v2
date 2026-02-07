@@ -6,14 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Edit, Save, X, Utensils, Flame, Calendar, Clock, Apple, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, Utensils, Flame, Calendar, Clock, Apple, ChevronDown, ChevronUp } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { ImageModal } from "@/components/ui/image-modal";
 import { HealthImpact } from "@/components/food/HealthImpact";
-import CommentsSection from "@/components/caretaker/CommentsSection";
 
 interface FoodEntry {
   id: string;
@@ -42,7 +41,6 @@ const FoodDetails = () => {
   const [editing, setEditing] = useState(false);
   const [editedData, setEditedData] = useState<Partial<FoodEntry>>({});
   const [showAllItems, setShowAllItems] = useState(false);
-  const [commentCount, setCommentCount] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -319,18 +317,9 @@ const FoodDetails = () => {
             {/* Right Content */}
             <div className="lg:col-span-3">
               <Tabs defaultValue="meal-analysis" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="meal-analysis">Meal Analysis</TabsTrigger>
                   <TabsTrigger value="health-impact">Health Impact</TabsTrigger>
-                  <TabsTrigger value="comments" className="relative">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Comments
-                    {commentCount > 0 && (
-                      <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 text-xs flex items-center justify-center">
-                        {commentCount}
-                      </Badge>
-                    )}
-                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="meal-analysis" className="space-y-6">
@@ -463,15 +452,6 @@ const FoodDetails = () => {
 
                 <TabsContent value="health-impact">
                   <HealthImpact extractedNutrients={foodEntry.extracted_nutrients} />
-                </TabsContent>
-
-                <TabsContent value="comments">
-                  <CommentsSection
-                    participantId={user?.id || ''}
-                    contentType="food_entry"
-                    contentId={id}
-                    isCaretaker={false}
-                  />
                 </TabsContent>
               </Tabs>
             </div>

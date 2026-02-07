@@ -46,7 +46,7 @@ interface ParticipantSidebarProps {
 const ParticipantSidebar = ({ onItemClick }: ParticipantSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { 
     hasCaretakerRelationships, 
     isLoading: roleLoading, 
@@ -88,8 +88,10 @@ const ParticipantSidebar = ({ onItemClick }: ParticipantSidebarProps) => {
 
   const handleSignOut = async () => {
     try {
-      await backendApi.auth.signOut();
-      navigate("/");
+      // Use signOut from AuthContext which properly handles both Cognito and local auth
+      await signOut();
+      // Force a full page refresh to clear all state and redirect to home
+      window.location.href = "/";
     } catch (error) {
       toast.error("Error signing out");
     }

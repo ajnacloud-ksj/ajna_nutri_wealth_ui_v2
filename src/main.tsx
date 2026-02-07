@@ -101,7 +101,11 @@ async function init() {
     console.log(`🔧 Running in ${IS_DEVELOPMENT ? 'development' : AUTH_MODE} mode`);
   }
 
-  root.render(<AppOptimized />);
+  root.render(
+    <React.StrictMode>
+      <AppOptimized />
+    </React.StrictMode>
+  );
 }
 
 init();

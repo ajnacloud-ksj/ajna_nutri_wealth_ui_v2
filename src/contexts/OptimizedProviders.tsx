@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo } from 'react';
+import React, { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
@@ -41,34 +41,24 @@ interface OptimizedProvidersProps {
  * and optimize re-renders
  */
 export const OptimizedProviders: React.FC<OptimizedProvidersProps> = ({ children }) => {
-  // Memoize the provider tree to prevent unnecessary re-renders
-  const providers = useMemo(() => {
-    // Stack providers in order of dependency
-    const providerStack = [
-      QueryClientProvider,
-      AuthProvider,
-      UserDataProvider,
-      UserTypeProvider,
-      RoleProvider,
-      CaretakerDataProvider,
-      NotificationProvider,
-    ];
-
-    // Build the nested provider tree
-    return providerStack.reduceRight(
-      (acc, Provider) => {
-        // Special handling for QueryClientProvider which needs the client prop
-        if (Provider === QueryClientProvider) {
-          return <Provider client={queryClient}>{acc}</Provider>;
-        }
-        // @ts-ignore - Provider types are complex but this works
-        return <Provider>{acc}</Provider>;
-      },
-      children as React.ReactElement
-    );
-  }, [children]);
-
-  return providers as React.ReactElement;
+  // Use traditional nesting approach for reliability
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <UserDataProvider>
+          <UserTypeProvider>
+            <RoleProvider>
+              <CaretakerDataProvider>
+                <NotificationProvider>
+                  {children}
+                </NotificationProvider>
+              </CaretakerDataProvider>
+            </RoleProvider>
+          </UserTypeProvider>
+        </UserDataProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
 };
 
 /**

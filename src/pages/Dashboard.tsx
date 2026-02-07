@@ -1,48 +1,24 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUserType } from "@/contexts/UserTypeContext";
 import SimpleRoleBasedLayout from "@/components/layout/SimpleRoleBasedLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Utensils, Dumbbell, BarChart3, Users, Settings, Plus, Activity, Heart } from "lucide-react";
+import { Camera, Utensils, Dumbbell, BarChart3, Activity, Heart, TrendingUp, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
-  const { userType, isLoading: userTypeLoading } = useUserType();
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('Dashboard page: Auth and user type state:', {
-      user: !!user,
-      authLoading,
-      userTypeLoading,
-      userType
-    });
-
     if (!authLoading && !user) {
-      console.log('Dashboard page: No user, redirecting to /auth');
       navigate("/auth");
       return;
     }
+  }, [user, authLoading, navigate]);
 
-    if (userTypeLoading) {
-      console.log('Dashboard page: Still loading user type...');
-      return;
-    }
-
-    if (userType === 'caretaker') {
-      console.log('Dashboard page: Caretaker detected, redirecting to /caretaker');
-      navigate("/caretaker", { replace: true });
-      return;
-    }
-
-    console.log('Dashboard page: Participant user, showing dashboard');
-  }, [user, authLoading, userTypeLoading, userType, navigate]);
-
-  if (authLoading || userTypeLoading) {
+  if (authLoading) {
     return (
       <SimpleRoleBasedLayout>
         <div className="nw-page-container flex items-center justify-center min-h-[60vh]">
@@ -55,7 +31,7 @@ const Dashboard = () => {
     );
   }
 
-  if (!user || userType === 'caretaker') {
+  if (!user) {
     return null;
   }
 
@@ -178,35 +154,35 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Care Team Card */}
+          {/* Recent Activity Card */}
           <Card className="nw-card-modern">
             <CardHeader className="border-b border-green-100/50 bg-gradient-to-r from-green-50/50 to-white">
               <CardTitle className="flex items-center gap-3 text-xl text-green-700">
                 <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Users className="h-5 w-5 text-green-600" />
+                  <Calendar className="h-5 w-5 text-green-600" />
                 </div>
-                Care Team
+                Recent Activity
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
               <p className="text-sm text-gray-600 leading-relaxed">
-                Manage your healthcare providers and share your health data securely with trusted professionals.
+                Track your daily progress and stay motivated with AI-powered insights.
               </p>
               <div className="space-y-3">
                 <Button asChild className="w-full justify-start h-12 nw-button-outline group">
-                  <Link to="/participant/invitations">
+                  <Link to="/food">
                     <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-green-200 nw-transition-fast">
-                      <Plus className="h-4 w-4 text-green-600" />
+                      <Utensils className="h-4 w-4 text-green-600" />
                     </div>
-                    Invite Healthcare Providers
+                    View Food History
                   </Link>
                 </Button>
                 <Button asChild className="w-full justify-start h-12 nw-button-outline group">
-                  <Link to="/participant/permissions">
+                  <Link to="/receipts">
                     <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-gray-200 nw-transition-fast">
-                      <Settings className="h-4 w-4 text-gray-600" />
+                      <TrendingUp className="h-4 w-4 text-gray-600" />
                     </div>
-                    Manage Permissions
+                    Browse Receipts
                   </Link>
                 </Button>
               </div>
@@ -222,8 +198,8 @@ const Dashboard = () => {
                 Welcome to Your Health Journey
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Track your nutrition, exercise, and health metrics with professional-grade tools. 
-                Share your progress with trusted healthcare providers and get personalized insights 
+                Track your nutrition, exercise, and health metrics with AI-powered analysis.
+                Get personalized insights from your food photos, receipts, and workout data
                 to achieve your wellness goals.
               </p>
             </div>

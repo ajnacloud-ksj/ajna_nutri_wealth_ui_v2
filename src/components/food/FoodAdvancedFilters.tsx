@@ -61,7 +61,7 @@ export const FoodAdvancedFilters = ({
               <SelectItem key={type.value} value={type.value} className="hover:bg-green-50">
                 <div className="flex items-center justify-between w-full">
                   <span>{type.label}</span>
-                  {mealTypeCounts[type.value] !== undefined && (
+                  {mealTypeCounts && mealTypeCounts[type.value] !== undefined && (
                     <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700">
                       {mealTypeCounts[type.value]}
                     </Badge>
@@ -85,7 +85,7 @@ export const FoodAdvancedFilters = ({
               <SelectItem key={type.value} value={type.value} className="hover:bg-green-50">
                 <div className="flex items-center justify-between w-full">
                   <span>{type.label}</span>
-                  {dietTypeCounts[type.value] !== undefined && (
+                  {dietTypeCounts && dietTypeCounts[type.value] !== undefined && (
                     <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700">
                       {dietTypeCounts[type.value]}
                     </Badge>

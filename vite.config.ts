@@ -47,22 +47,15 @@ export default defineConfig(({ mode }) => ({
         manualChunks: (id) => {
           // Split vendor chunks for better caching
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'react-vendor';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'ui-vendor';
-            }
-            if (id.includes('recharts')) {
-              return 'charts-vendor';
-            }
+            // Keep React and its related packages together with main vendor
+            // to avoid context initialization issues
             if (id.includes('aws-amplify')) {
               return 'aws-vendor';
             }
-            if (id.includes('@tanstack')) {
-              return 'query-vendor';
+            if (id.includes('recharts') || id.includes('d3')) {
+              return 'charts-vendor';
             }
-            // Other vendors
+            // All other vendor code including React, Radix UI, and tanstack
             return 'vendor';
           }
         },

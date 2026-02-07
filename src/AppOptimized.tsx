@@ -1,17 +1,8 @@
 import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/contexts/AuthContext";
 import { initializeLocalAuth } from "@/config/local";
-import { UserDataProvider } from "@/contexts/UserDataContext";
-import { UserTypeProvider } from "@/contexts/UserTypeContext";
-import { RoleProvider } from "@/contexts/RoleContext";
-import { CaretakerDataProvider } from "@/contexts/CaretakerDataContext";
-import { NotificationProvider } from "@/contexts/NotificationContext";
-import PWAUpdateManager from "@/components/pwa/PWAUpdateManager";
-import EnhancedPWAInstallPrompt from "@/components/pwa/EnhancedPWAInstallPrompt";
-import NotificationPanel from "@/components/notifications/NotificationPanel";
+import { OptimizedProviders, PerformanceMonitor } from "@/contexts/OptimizedProviders";
 import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
 import PublicRoute from "./components/routes/PublicRoute";
 import PrivateRoute from "./components/routes/PrivateRoute";
@@ -26,6 +17,11 @@ const PageLoader = () => (
   </div>
 );
 
+// Lazy load PWA components
+const PWAUpdateManager = lazy(() => import("@/components/pwa/PWAUpdateManager"));
+const EnhancedPWAInstallPrompt = lazy(() => import("@/components/pwa/EnhancedPWAInstallPrompt"));
+const NotificationPanel = lazy(() => import("@/components/notifications/NotificationPanel"));
+
 // Lazy load all route components for code splitting
 // Critical pages (auth, dashboard) loaded with higher priority
 const Auth = lazy(() => import("./pages/Auth"));
@@ -33,7 +29,9 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const SimplifiedIndex = lazy(() => import("./pages/SimplifiedIndex"));
 
 // Main app pages - loaded on demand
-const Food = lazy(() => import("./pages/Food"));
+const Food = lazy(() =>
+  import("./pages/FoodOptimized").catch(() => import("./pages/Food"))
+);
 const FoodDetails = lazy(() => import("./pages/FoodDetails"));
 const Workouts = lazy(() => import("./pages/Workouts"));
 const WorkoutDetails = lazy(() => import("./pages/WorkoutDetails"));
@@ -49,17 +47,6 @@ const Billing = lazy(() => import("./pages/Billing"));
 const Admin = lazy(() => import("./pages/Admin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      cacheTime: 1000 * 60 * 30, // 30 minutes
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
-
 function AppOptimized() {
   // Initialize local auth on app start
   useEffect(() => {
@@ -72,28 +59,27 @@ function AppOptimized() {
     };
 
     // Start preloading after initial render
-    requestIdleCallback ?
-      requestIdleCallback(preloadCriticalRoutes) :
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(preloadCriticalRoutes);
+    } else {
       setTimeout(preloadCriticalRoutes, 1);
+    }
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <UserDataProvider>
-          <UserTypeProvider>
-            <RoleProvider>
-              <CaretakerDataProvider>
-                <NotificationProvider>
-                <Router>
-                  <div className="min-h-screen bg-background w-full">
-                    <PWAUpdateManager />
-                    <EnhancedPWAInstallPrompt />
+    <PerformanceMonitor>
+      <OptimizedProviders>
+        <Router>
+          <div className="min-h-screen bg-background w-full">
+            <Suspense fallback={null}>
+              <PWAUpdateManager />
+              <EnhancedPWAInstallPrompt />
 
-                    {/* Notification Panel - positioned globally */}
-                    <div className="fixed top-4 right-4 z-50">
-                      <NotificationPanel />
-                    </div>
+              {/* Notification Panel - positioned globally */}
+              <div className="fixed top-4 right-4 z-50">
+                <NotificationPanel />
+              </div>
+            </Suspense>
 
                     <Suspense fallback={<PageLoader />}>
                       <Routes>
@@ -129,18 +115,13 @@ function AppOptimized() {
                         {/* 404 Catch-all route */}
                         <Route path="*" element={<NotFound />} />
                       </Routes>
-                    </Suspense>
-                  </div>
-                  <Toaster />
-                  <ShadcnToaster />
-                </Router>
-              </NotificationProvider>
-            </CaretakerDataProvider>
-          </RoleProvider>
-        </UserTypeProvider>
-        </UserDataProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+            </Suspense>
+          </div>
+          <Toaster />
+          <ShadcnToaster />
+        </Router>
+      </OptimizedProviders>
+    </PerformanceMonitor>
   );
 }
 

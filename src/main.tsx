@@ -1,6 +1,5 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import { Amplify } from 'aws-amplify';
 import AppOptimized from './AppOptimized.tsx'
 import './index.css'
 
@@ -78,6 +77,9 @@ async function init() {
         const config = await response.json();
 
         if (config.userPoolId && config.userPoolClientId) {
+          // Dynamically import Amplify only when needed
+          const { Amplify } = await import('aws-amplify');
+
           Amplify.configure({
             Auth: {
               Cognito: {

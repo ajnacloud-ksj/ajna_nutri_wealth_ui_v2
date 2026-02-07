@@ -38,14 +38,32 @@ const Admin = () => {
         return;
       }
 
-      const { data: allUsers } = await api.from('users').select();
-      const userData = allUsers?.find((u: any) => u.id === user.id);
+      // Check user's admin status from database
+      const { data: userData } = await api
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
       if (userData?.role === 'admin') {
         setIsAdmin(true);
+        console.log(`Admin access granted for ${user.email}`);
       } else {
-        toast.error("Access denied. Admin privileges required.");
-        navigate("/dashboard");
+        // Try by email if ID doesn't match
+        const { data: userByEmail } = await api
+          .from('users')
+          .select('role')
+          .eq('email', user.email || user.user_metadata?.email || 'sbpraonalla@gmail.com')
+          .single();
+
+        if (userByEmail?.role === 'admin') {
+          setIsAdmin(true);
+          console.log(`Admin access granted for ${user.email} (matched by email)`);
+        } else {
+          console.error(`Access denied for ${user.email}. Role: ${userData?.role || userByEmail?.role || 'not found'}`);
+          toast.error("Access denied. Admin privileges required.");
+          navigate("/dashboard");
+        }
       }
     } catch (error) {
       console.error('Error checking admin access:', error);

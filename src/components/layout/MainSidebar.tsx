@@ -42,16 +42,36 @@ export const MainSidebar = () => {
       if (!user) return;
 
       try {
+        // Query the users table directly with proper auth token
         const { data: userData } = await backendApi
           .from('users')
           .select('role, is_subscribed')
           .eq('id', user.id)
           .single();
 
-        setIsAdmin(userData?.role === 'admin');
-        setIsSubscribed(userData?.is_subscribed || false);
+        // Check if user exists and has admin role
+        if (userData) {
+          setIsAdmin(userData.role === 'admin');
+          setIsSubscribed(userData.is_subscribed || false);
+          console.log('User role:', userData.role, 'for user:', user.email);
+        } else {
+          // If user not found, check by email
+          const { data: userByEmail } = await backendApi
+            .from('users')
+            .select('role, is_subscribed')
+            .eq('email', user.email)
+            .single();
+
+          if (userByEmail) {
+            setIsAdmin(userByEmail.role === 'admin');
+            setIsSubscribed(userByEmail.is_subscribed || false);
+            console.log('User role (by email):', userByEmail.role, 'for user:', user.email);
+          }
+        }
       } catch (error) {
         console.error('Error checking user status:', error);
+        // For debugging
+        console.log('Current user:', user);
       }
     };
 

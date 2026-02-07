@@ -30,6 +30,68 @@ export default defineConfig(({ mode }) => ({
       }
     }
   },
+  build: {
+    // Optimize build output
+    target: 'es2020',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: mode === 'production',
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info'],
+      },
+    },
+    // Optimize chunk splitting
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          // Split vendor chunks for better caching
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'ui-vendor';
+            }
+            if (id.includes('recharts')) {
+              return 'charts-vendor';
+            }
+            if (id.includes('aws-amplify')) {
+              return 'aws-vendor';
+            }
+            if (id.includes('@tanstack')) {
+              return 'query-vendor';
+            }
+            // Other vendors
+            return 'vendor';
+          }
+        },
+        // Use content hash for better caching
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+      },
+    },
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+    // Generate source maps only in development
+    sourcemap: mode === 'development',
+    // Enable CSS code splitting
+    cssCodeSplit: true,
+    // Optimize assets
+    assetsInlineLimit: 4096, // Inline assets smaller than 4kb
+  },
+  optimizeDeps: {
+    // Pre-bundle heavy dependencies
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@tanstack/react-query',
+    ],
+    // Exclude dependencies that should be dynamically imported
+    exclude: ['aws-amplify'],
+  },
   plugins: [
     react(),
     mode === 'development' &&

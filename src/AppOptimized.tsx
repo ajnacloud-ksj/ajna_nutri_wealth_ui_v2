@@ -1,8 +1,14 @@
 import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { initializeLocalAuth } from "@/config/local";
-import { OptimizedProviders, PerformanceMonitor } from "@/contexts/OptimizedProviders";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { UserDataProvider } from "@/contexts/UserDataContext";
+import { UserTypeProvider } from "@/contexts/UserTypeContext";
+import { RoleProvider } from "@/contexts/RoleContext";
+import { CaretakerDataProvider } from "@/contexts/CaretakerDataContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
 import PublicRoute from "./components/routes/PublicRoute";
 import PrivateRoute from "./components/routes/PrivateRoute";
@@ -47,6 +53,17 @@ const Billing = lazy(() => import("./pages/Billing"));
 const Admin = lazy(() => import("./pages/Admin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+// Create QueryClient with optimized settings
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false,
+      retry: 2,
+    },
+  },
+});
+
 function AppOptimized() {
   // Initialize local auth on app start
   useEffect(() => {
@@ -67,22 +84,27 @@ function AppOptimized() {
   }, []);
 
   return (
-    <PerformanceMonitor>
-      <OptimizedProviders>
-        <Router>
-          <div className="min-h-screen bg-background w-full">
-            <Suspense fallback={null}>
-              <PWAUpdateManager />
-              <EnhancedPWAInstallPrompt />
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <UserDataProvider>
+          <UserTypeProvider>
+            <RoleProvider>
+              <CaretakerDataProvider>
+                <NotificationProvider>
+                  <Router>
+                    <div className="min-h-screen bg-background w-full">
+                      <Suspense fallback={null}>
+                        <PWAUpdateManager />
+                        <EnhancedPWAInstallPrompt />
 
-              {/* Notification Panel - positioned globally */}
-              <div className="fixed top-4 right-4 z-50">
-                <NotificationPanel />
-              </div>
-            </Suspense>
+                        {/* Notification Panel - positioned globally */}
+                        <div className="fixed top-4 right-4 z-50">
+                          <NotificationPanel />
+                        </div>
+                      </Suspense>
 
-                    <Suspense fallback={<PageLoader />}>
-                      <Routes>
+                      <Suspense fallback={<PageLoader />}>
+                        <Routes>
                         {/* Public Routes */}
                         <Route path="/" element={<PublicRoute><SimplifiedIndex /></PublicRoute>} />
                         <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
@@ -115,13 +137,18 @@ function AppOptimized() {
                         {/* 404 Catch-all route */}
                         <Route path="*" element={<NotFound />} />
                       </Routes>
-            </Suspense>
-          </div>
-          <Toaster />
-          <ShadcnToaster />
-        </Router>
-      </OptimizedProviders>
-    </PerformanceMonitor>
+                    </Suspense>
+                  </div>
+                  <Toaster />
+                  <ShadcnToaster />
+                </Router>
+              </NotificationProvider>
+            </CaretakerDataProvider>
+          </RoleProvider>
+        </UserTypeProvider>
+      </UserDataProvider>
+    </AuthProvider>
+  </QueryClientProvider>
   );
 }
 

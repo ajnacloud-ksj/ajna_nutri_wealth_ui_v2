@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, Utensils, LayoutGrid, List } from "lucide-react";
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
@@ -236,17 +236,19 @@ const Food = () => {
       console.log('Fetching food entries for user:', user.id);
 
       // Fetch only current user's entries - NO food_items needed!
-      const result = await api.from('food_entries')
+      const { data: entriesData, error } = await backendApi.from('food_entries')
         .select()
         .eq('user_id', user.id)
         .limit(100);  // Increased limit but still reasonable for performance
 
-      console.log('API Response:', result);
+      console.log('API Response:', { data: entriesData, error });
 
-      // Handle both response formats - the API might return data directly or wrapped
-      const entriesData = result?.data || result || [];
+      if (error) {
+        console.error('API Error:', error);
+        throw error;
+      }
 
-      if (!Array.isArray(entriesData)) {
+      if (!entriesData || !Array.isArray(entriesData)) {
         console.error('Unexpected response format:', entriesData);
         throw new Error("Failed to fetch entries - invalid format");
       }
@@ -305,14 +307,15 @@ const Food = () => {
 
   const deleteFoodEntry = async (id: string) => {
     try {
-      const { error } = await api.from('food_entries').delete().eq('id', id);
+      const { error } = await backendApi.from('food_entries').delete().eq('id', id);
 
-      // Note: Generic API Delete is mocked in api.ts for now or needs implementation.
-      // If it fails silently, we assume success in UI but backend needs real delete.
-      if (error) throw error;
+      if (error) {
+        console.error('Delete error:', error);
+        throw error;
+      }
 
       toast.success("Food entry deleted successfully");
-      fetchFoodEntries();
+      await fetchFoodEntries(); // Await the refresh
     } catch (error: any) {
       console.error('Error deleting food entry:', error);
       toast.error("Failed to delete food entry");

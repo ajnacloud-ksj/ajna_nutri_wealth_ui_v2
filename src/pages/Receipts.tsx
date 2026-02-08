@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Receipt, Plus, LayoutGrid, List } from "lucide-react";
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
@@ -64,7 +64,7 @@ const Receipts = () => {
   const fetchReceipts = async () => {
     try {
       // Use the specific receipts endpoint
-      const response = await api.get('/v1/receipts');
+      const response = await backendApi.get('/v1/receipts');
 
       // Backend returns {receipts: [...], total: number}
       const userReceipts = response.data?.receipts || [];
@@ -85,7 +85,7 @@ const Receipts = () => {
   const deleteReceipt = async (id: string) => {
     try {
       // Use the direct DELETE endpoint for receipts
-      await api.delete(`/v1/app_receipts/${id}`);
+      await backendApi.delete(`/v1/app_receipts/${id}`);
 
       toast.success("Receipt deleted successfully");
       fetchReceipts();

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Sparkles, Camera, Loader2, AlertCircle, Mic } from "lucide-react";
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import SidebarLayout from "@/components/layout/SidebarLayout";
@@ -102,7 +102,7 @@ const Capture = () => {
       // Step 4: Call async analyze endpoint
       setUploadProgress('Starting AI analysis...');
 
-      const { data: asyncResult } = await api.post('/v1/analyze/async', {
+      const { data: asyncResult } = await backendApi.post('/v1/analyze/async', {
         user_id: user.id,
         description: description || 'AI-analyzed content',
         image_url: fileUrl || ''
@@ -128,7 +128,7 @@ const Capture = () => {
         pollAttempts++;
 
         try {
-          const { data: statusData } = await api.get(`/v1/analyze/status/${entryId}`);
+          const { data: statusData } = await backendApi.get(`/v1/analyze/status/${entryId}`);
 
           if (statusData.status === 'completed') {
             clearInterval(pollInterval);

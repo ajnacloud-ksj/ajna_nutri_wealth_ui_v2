@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dumbbell, Plus, LayoutGrid, List } from "lucide-react";
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
@@ -80,9 +80,9 @@ const Workouts = () => {
       }
 
       // Fetch workouts
-      const { data: workoutsData } = await api.from('workouts').select();
+      const { data: workoutsData } = await backendApi.from('workouts').select();
       // Fetch exercises
-      const { data: exercisesData } = await api.from('workout_exercises').select();
+      const { data: exercisesData } = await backendApi.from('workout_exercises').select();
 
       if (!workoutsData) throw new Error("Failed to fetch workouts");
 
@@ -116,7 +116,7 @@ const Workouts = () => {
 
   const deleteWorkout = async (id: string) => {
     try {
-      const { error } = await api.from('workouts').delete().eq('id', id);
+      const { error } = await backendApi.from('workouts').delete().eq('id', id);
 
       if (error) throw error;
 

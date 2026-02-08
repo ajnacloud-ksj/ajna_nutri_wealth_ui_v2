@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, Check, Star, Zap, Shield, Users, Loader2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -46,12 +46,12 @@ const Billing = () => {
       }
 
       // Fetch user subscription status
-      const { data: allUsers } = await api.from('users').select();
+      const { data: allUsers } = await backendApi.from('users').select();
       const userInfo = allUsers?.find((u: any) => u.id === user.id);
 
       // Fetch today's usage
       const today = new Date().toISOString().split('T')[0];
-      const { data: allUsage } = await api.from('api_usage_log').select();
+      const { data: allUsage } = await backendApi.from('api_usage_log').select();
       const usage = allUsage?.find((u: any) => u.user_id === user.id && u.usage_date === today);
 
       setUserData(userInfo || { is_subscribed: false, subscription_id: null, email: user.email || '' });

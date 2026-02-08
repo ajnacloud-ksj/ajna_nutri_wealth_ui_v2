@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, TrendingUp, Calendar, Target, Utensils, Receipt, Dumbbell } from "lucide-react";
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
@@ -60,15 +60,15 @@ const Insights = () => {
       const user = { id: 'test-user-id' }; // Placeholder until useAuth is wired
 
       // Fetch food data
-      const { data: allFood } = await api.from('food_entries').select();
+      const { data: allFood } = await backendApi.from('food_entries').select();
       const foodData = allFood?.filter((i: any) => i.user_id === user.id);
 
       // Fetch receipts data
-      const { data: allReceipts } = await api.from('app_receipts').select();
+      const { data: allReceipts } = await backendApi.from('app_receipts').select();
       const receiptsData = allReceipts?.filter((i: any) => i.user_id === user.id);
 
       // Fetch workouts data
-      const { data: allWorkouts } = await api.from('workouts').select();
+      const { data: allWorkouts } = await backendApi.from('workouts').select();
       const workoutsData = allWorkouts?.filter((i: any) => i.user_id === user.id);
 
       // Calculate insights

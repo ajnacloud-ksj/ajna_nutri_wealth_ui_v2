@@ -57,15 +57,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
           const { signOut } = await import('aws-amplify/auth');
           await signOut();
-          localStorage.removeItem('auth_token'); // Clear local token too
         } catch (cognitoError) {
           console.error('Cognito sign out error:', cognitoError);
         }
-      } else {
-        // Mock sign out
-        const { error } = await backendApi.auth.signOut();
-        if (error) throw error;
       }
+
+      // Always clear all local storage items regardless of auth mode
+      // Clear Amplify/Cognito tokens
+      const keysToRemove = Object.keys(localStorage).filter(key =>
+        key.includes('CognitoIdentityServiceProvider') ||
+        key.includes('amplify') ||
+        key.includes('aws') ||
+        key === 'auth_token' ||
+        key === 'user'
+      );
+
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+
+      // Also clear session storage
+      const sessionKeys = Object.keys(sessionStorage).filter(key =>
+        key.includes('CognitoIdentityServiceProvider') ||
+        key.includes('amplify') ||
+        key.includes('aws')
+      );
+
+      sessionKeys.forEach(key => sessionStorage.removeItem(key));
 
       setUser(null);
     } catch (error) {

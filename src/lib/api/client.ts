@@ -48,8 +48,31 @@ class BackendApiClient {
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    // Load auth token from localStorage
-    this.authToken = localStorage.getItem('auth_token');
+  }
+
+  // Get current auth token (from Cognito or localStorage)
+  private async getCurrentAuthToken(): Promise<string | null> {
+    const isProductionUrl = this.baseUrl.includes('lambda-url') || this.baseUrl.includes('ajna.cloud') || this.baseUrl.includes('triviz.cloud');
+    const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl ? 'cognito' : 'local');
+
+    if (authMode === 'cognito') {
+      try {
+        const { fetchAuthSession } = await import('aws-amplify/auth');
+        const session = await fetchAuthSession();
+        const token = session.tokens?.idToken?.toString();
+        if (token) {
+          this.authToken = token;
+          return token;
+        }
+      } catch (error) {
+        console.log('No Cognito session available');
+      }
+    }
+
+    // Fallback to localStorage for local mode
+    const storedToken = localStorage.getItem('auth_token');
+    this.authToken = storedToken;
+    return storedToken;
   }
 
   // Helper method to make API requests
@@ -58,13 +81,23 @@ class BackendApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     try {
+      // Get current auth token (from Cognito or localStorage)
+      const token = await this.getCurrentAuthToken();
+
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
-        ...(this.authToken && { Authorization: `Bearer ${this.authToken}` }),
+        ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
       };
 
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      // Fix double slash issue - ensure proper URL construction
+      const url = this.baseUrl.endsWith('/') && endpoint.startsWith('/')
+        ? `${this.baseUrl}${endpoint.slice(1)}`
+        : this.baseUrl.endsWith('/') || endpoint.startsWith('/')
+        ? `${this.baseUrl}${endpoint}`
+        : `${this.baseUrl}/${endpoint}`;
+
+      const response = await fetch(url, {
         ...options,
         headers,
       });
@@ -291,13 +324,66 @@ class BackendApiClient {
     },
 
     signOut: async (): Promise<ApiResponse<void>> => {
+      // Clear auth token
       this.authToken = null;
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user');
+
+      // Clear all auth-related localStorage items
+      const keysToRemove = Object.keys(localStorage).filter(key =>
+        key.includes('CognitoIdentityServiceProvider') ||
+        key.includes('amplify') ||
+        key.includes('aws') ||
+        key === 'auth_token' ||
+        key === 'user'
+      );
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+
+      // Clear all auth-related sessionStorage items
+      const sessionKeys = Object.keys(sessionStorage).filter(key =>
+        key.includes('CognitoIdentityServiceProvider') ||
+        key.includes('amplify') ||
+        key.includes('aws')
+      );
+      sessionKeys.forEach(key => sessionStorage.removeItem(key));
+
       return { data: undefined, error: null };
     },
 
     getUser: async (): Promise<ApiResponse<User>> => {
+      const isProductionUrl = API_BASE_URL.includes('lambda-url') || API_BASE_URL.includes('ajna.cloud') || API_BASE_URL.includes('triviz.cloud');
+      const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl ? 'cognito' : 'local');
+
+      if (authMode === 'cognito') {
+        try {
+          const { getCurrentUser, fetchAuthSession } = await import('aws-amplify/auth');
+          const user = await getCurrentUser();
+          const session = await fetchAuthSession();
+
+          if (user && session.tokens) {
+            // Get user email from localStorage if stored during sign in
+            const storedUser = localStorage.getItem('user');
+            let email = '';
+            if (storedUser) {
+              try {
+                const parsed = JSON.parse(storedUser);
+                email = parsed.email || '';
+              } catch {}
+            }
+
+            const userData: User = {
+              id: user.userId,
+              email: email || user.username,
+              user_metadata: {
+                user_type: 'participant'
+              }
+            };
+            return { data: userData, error: null };
+          }
+        } catch (error) {
+          console.log('No Cognito user session');
+        }
+      }
+
+      // Fallback to localStorage
       const userStr = localStorage.getItem('user');
       if (!userStr) {
         return { data: null, error: new Error('No user found') };

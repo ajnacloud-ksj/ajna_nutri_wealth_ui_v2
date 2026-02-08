@@ -236,12 +236,20 @@ const Food = () => {
       console.log('Fetching food entries for user:', user.id);
 
       // Fetch only current user's entries - NO food_items needed!
-      const { data: entriesData } = await api.from('food_entries')
+      const result = await api.from('food_entries')
         .select()
         .eq('user_id', user.id)
         .limit(100);  // Increased limit but still reasonable for performance
 
-      if (!entriesData) throw new Error("Failed to fetch entries");
+      console.log('API Response:', result);
+
+      // Handle both response formats - the API might return data directly or wrapped
+      const entriesData = result?.data || result || [];
+
+      if (!Array.isArray(entriesData)) {
+        console.error('Unexpected response format:', entriesData);
+        throw new Error("Failed to fetch entries - invalid format");
+      }
 
       // Process entries (removed food_items join - not used in UI)
       const userEntries = entriesData
@@ -273,6 +281,13 @@ const Food = () => {
 
       console.log('Found food entries:', userEntries.length);
       setFoodEntries(userEntries);
+
+      // Show appropriate toast message
+      if (userEntries.length > 0) {
+        toast.success(`Loaded ${userEntries.length} food entries`);
+      } else {
+        toast.info("No food entries found. Add your first entry!");
+      }
     } catch (error: any) {
       console.error('Error fetching food entries:', error);
       toast.error("Failed to load food entries");

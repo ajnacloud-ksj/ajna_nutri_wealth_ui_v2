@@ -379,7 +379,17 @@ export const api = {
 
                     console.log(`Fetching from ${url}`);
                     const response = await client.get(url);
-                    return { data: response.data, error: null };
+                    console.log(`Response for ${this._table}:`, response.data);
+
+                    // The backend returns data directly, not wrapped
+                    // Ensure we always return an array for consistency
+                    let responseData = response.data;
+                    if (responseData && !Array.isArray(responseData)) {
+                        // If it's a single object, wrap in array
+                        responseData = [responseData];
+                    }
+
+                    return { data: responseData || [], error: null };
                 } catch (error: any) {
                     console.error(`Error fetching from ${this._table}:`, error);
                     // If route not found, return empty array instead of error for reads
@@ -394,6 +404,7 @@ export const api = {
             then: async function (resolve: any, reject: any) {
                 try {
                     const result = await this.execute();
+                    // Don't double-wrap the result - execute already returns { data, error }
                     resolve(result);
                 } catch (error) {
                     reject(error);

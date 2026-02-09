@@ -847,48 +847,54 @@ class BackendApiClient {
 
   // Edge functions (for invitation redemption, etc.)
   functions = {
-    invoke: async (functionName: string, options: { body: any }) => {
-      if (functionName === 'redeem-invitation') {
-        // Mock invitation redemption
-        console.log('Mock: Redeeming invitation with code:', options.body.invitationCode);
-        return { data: { success: true }, error: null };
-      }
+    invoke: async (functionName: string, options: { body: any }): Promise<ApiResponse<any>> => {
+      // In production mode, map function names to actual API endpoints
+      const isProductionMode = this.baseUrl && !IS_LOCAL_MODE;
 
-      if (functionName === 'async-analyze' || functionName === 'auto-classify-and-analyze') {
-        // Mock AI analysis
-        console.log('Mock: Analyzing content:', options.body);
+      if (isProductionMode) {
+        // Production mode - call actual API endpoints
+        if (functionName === 'async-analyze' || functionName === 'auto-classify-and-analyze') {
+          // Call the async analyze endpoint
+          console.log('[Functions] Calling async analyze endpoint');
+          return this.post('/v1/analyze/async', options.body);
+        }
 
-        const mockAnalysis = {
-          classification: options.body.image_url ? 'food' : 'text',
-          analysis: {
-            food_items: [
-              {
-                name: options.body.description || 'Analyzed Food Item',
-                calories: Math.floor(Math.random() * 500) + 200,
-                protein: Math.floor(Math.random() * 30) + 10,
-                carbs: Math.floor(Math.random() * 50) + 20,
-                fat: Math.floor(Math.random() * 20) + 5,
-              }
-            ],
-            total_calories: Math.floor(Math.random() * 800) + 300,
-            nutritional_summary: 'Mock analysis complete. This is a development mode response.',
-            health_notes: 'This is mock data for development purposes.',
-          },
-          confidence: 0.95,
-          processing_time: 1.2,
-        };
+        if (functionName === 'redeem-invitation') {
+          return t
 
-        return { data: mockAnalysis, error: null };
-      }
+('/v1/invitations/redeem', options.body);
+        }
 
-      if (functionName === 'app-version') {
-        // Mock app version
-        return { data: { version: 'v1.0.0' }, error: null };
+        if (functionName === 'app-version') {
+          return this.get('/v1/version');
+        }
+      } else {
+        // Local/mock mode - return mock responses
+        if (functionName === 'redeem-invitation') {
+          console.log('Mock: Redeeming invitation with code:', options.body.invitationCode);
+          return { data: { success: true }, error: null };
+        }
+
+        if (functionName === 'async-analyze' || functionName === 'auto-classify-and-analyze') {
+          console.log('Mock: Analyzing content:', options.body);
+
+          const mockAnalysis = {
+            entry_id: `mock-${Date.now()}`,
+            status: 'pending',
+            message: 'Analysis queued (mock mode)'
+          };
+
+          return { data: mockAnalysis, error: null };
+        }
+
+        if (functionName === 'app-version') {
+          return { data: { version: 'v1.0.0' }, error: null };
+        }
       }
 
       return {
         data: null,
-        error: new Error(`Function ${functionName} not implemented in mock mode`),
+        error: new Error(`Function ${functionName} not implemented`),
       };
     },
   };

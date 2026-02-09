@@ -102,11 +102,16 @@ const Capture = () => {
       // Step 4: Call async analyze endpoint
       setUploadProgress('Starting AI analysis...');
 
+      // Debug: Log the endpoint being called
+      console.log('[Capture] Calling async endpoint: /v1/analyze/async');
+
+      // Don't send user_id in body - backend gets it from auth token
       const { data: asyncResult } = await backendApi.post('/v1/analyze/async', {
-        user_id: user.id,
         description: description || 'AI-analyzed content',
         image_url: fileUrl || ''
       });
+
+      console.log('[Capture] Response:', asyncResult);
 
       const entryId = asyncResult.entry_id;
 

@@ -4,7 +4,9 @@
  */
 
 // Determine if we're in local/development mode
-export const IS_LOCAL_MODE = import.meta.env.DEV || import.meta.env.MODE === 'development';
+// Check if we're using Cognito auth mode - if so, disable local mode
+const AUTH_MODE = import.meta.env.VITE_AUTH_MODE;
+export const IS_LOCAL_MODE = AUTH_MODE === 'cognito' ? false : (import.meta.env.DEV || import.meta.env.MODE === 'development');
 
 // Default user for local development - matches backend test data
 export const LOCAL_USER = {

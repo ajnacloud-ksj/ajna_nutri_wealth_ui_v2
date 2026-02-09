@@ -245,54 +245,70 @@ const Food = () => {
 
       if (error) {
         console.error('API Error:', error);
-        throw error;
+        // Don't throw, try to handle gracefully
+        toast.error(`Error loading food entries: ${error.message}`);
+        setFoodEntries([]);
+        setLoading(false);
+        setRefreshing(false);
+        return;
       }
 
-      if (!entriesData || !Array.isArray(entriesData)) {
-        console.error('Unexpected response format:', entriesData);
-        throw new Error("Failed to fetch entries - invalid format");
+      // Handle both array response and empty response
+      let processedEntries = [];
+
+      if (entriesData && Array.isArray(entriesData)) {
+        // Process entries (removed food_items join - not used in UI)
+        processedEntries = entriesData
+          .map((entry: any) => {
+            // Parse JSON strings if they exist
+            if (entry.extracted_nutrients && typeof entry.extracted_nutrients === 'string') {
+              try {
+                entry.extracted_nutrients = JSON.parse(entry.extracted_nutrients);
+              } catch (e) {
+                console.error('Failed to parse extracted_nutrients:', e);
+              }
+            }
+            if (entry.ingredients && typeof entry.ingredients === 'string') {
+              try {
+                entry.ingredients = JSON.parse(entry.ingredients);
+              } catch (e) {
+                console.error('Failed to parse ingredients:', e);
+              }
+            }
+
+            return {
+              ...entry,
+              food_items: []  // Empty array - not using food_items in display
+            };
+          });
+
+        // Sort desc
+        processedEntries.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      } else if (entriesData === null || entriesData === undefined) {
+        // API returned null/undefined - treat as empty
+        processedEntries = [];
+        console.log('API returned null/undefined, treating as empty array');
+      } else {
+        console.warn('Unexpected response format:', entriesData);
+        processedEntries = [];
       }
 
-      // Process entries (removed food_items join - not used in UI)
-      const userEntries = entriesData
-        .map((entry: any) => {
-          // Parse JSON strings if they exist
-          if (entry.extracted_nutrients && typeof entry.extracted_nutrients === 'string') {
-            try {
-              entry.extracted_nutrients = JSON.parse(entry.extracted_nutrients);
-            } catch (e) {
-              console.error('Failed to parse extracted_nutrients:', e);
-            }
-          }
-          if (entry.ingredients && typeof entry.ingredients === 'string') {
-            try {
-              entry.ingredients = JSON.parse(entry.ingredients);
-            } catch (e) {
-              console.error('Failed to parse ingredients:', e);
-            }
-          }
-
-          return {
-            ...entry,
-            food_items: []  // Empty array - not using food_items in display
-          };
-        });
-
-      // Sort desc
-      userEntries.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-      console.log('Found food entries:', userEntries.length);
-      setFoodEntries(userEntries);
+      console.log('Found food entries:', processedEntries.length);
+      setFoodEntries(processedEntries);
 
       // Show appropriate toast message
-      if (userEntries.length > 0) {
-        toast.success(`Loaded ${userEntries.length} food entries`);
+      if (processedEntries.length > 0) {
+        toast.success(`Loaded ${processedEntries.length} food entries`);
       } else {
-        toast.info("No food entries found. Add your first entry!");
+        // Only show info message if we're not already showing an error
+        if (!error) {
+          toast.info("No food entries found. Add your first entry!");
+        }
       }
     } catch (error: any) {
       console.error('Error fetching food entries:', error);
-      toast.error("Failed to load food entries");
+      toast.error(`Failed to load food entries: ${error.message || 'Unknown error'}`);
+      setFoodEntries([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -448,13 +464,32 @@ const Food = () => {
                 }
               </p>
               {foodEntries.length === 0 && (
-                <Button
-                  onClick={() => navigate("/capture")}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Your First Food Entry
-                </Button>
+                <>
+                  <Button
+                    onClick={() => navigate("/capture")}
+                    className="bg-green-600 hover:bg-green-700 mb-4"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Your First Food Entry
+                  </Button>
+
+                  {/* Show helpful message if in production without API */}
+                  {typeof window !== 'undefined' &&
+                   window.location.hostname.includes('triviz.cloud') &&
+                   !import.meta.env.VITE_API_URL && (
+                    <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg max-w-md">
+                      <p className="text-sm text-yellow-800 mb-2">
+                        <strong>Setup Required:</strong> API connection not configured.
+                      </p>
+                      <p className="text-xs text-yellow-700 mb-2">
+                        For testing, you can add mock data by running this in the browser console:
+                      </p>
+                      <code className="text-xs bg-yellow-100 p-1 rounded block">
+                        Copy and paste browser_test_data.js
+                      </code>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>

@@ -74,32 +74,45 @@ async function init() {
   );
 
   // Configure Amplify after initial render if needed
-  if (AUTH_MODE === 'cognito' && !IS_DEVELOPMENT) {
+  if (AUTH_MODE === 'cognito') {
     try {
-      // In production, fetch auth config from backend
-      const apiUrl = import.meta.env.VITE_API_URL || '';
-      const response = await fetch(`${apiUrl}/v1/auth/config`);
+      let config = null;
 
-      if (response.ok) {
-        const config = await response.json();
+      // Try to get config from environment variables first (for local dev with prod backend)
+      if (import.meta.env.VITE_USER_POOL_ID && import.meta.env.VITE_USER_POOL_CLIENT_ID) {
+        config = {
+          region: import.meta.env.VITE_AWS_REGION || 'ap-south-1',
+          userPoolId: import.meta.env.VITE_USER_POOL_ID,
+          userPoolClientId: import.meta.env.VITE_USER_POOL_CLIENT_ID
+        };
+        console.log('Using Cognito config from environment variables');
+      } else if (!IS_DEVELOPMENT) {
+        // In production, fetch auth config from backend
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const response = await fetch(`${apiUrl}/v1/auth/config`);
 
-        if (config.userPoolId && config.userPoolClientId) {
-          // Dynamically import Amplify only when needed
-          const { Amplify } = await import('aws-amplify');
+        if (response.ok) {
+          config = await response.json();
+        }
+      }
 
-          Amplify.configure({
-            Auth: {
-              Cognito: {
-                userPoolId: config.userPoolId,
-                userPoolClientId: config.userPoolClientId,
-                loginWith: {
-                  email: true
-                }
+      if (config && config.userPoolId && config.userPoolClientId) {
+        // Dynamically import Amplify only when needed
+        const { Amplify } = await import('aws-amplify');
+
+        Amplify.configure({
+          Auth: {
+            Cognito: {
+              region: config.region || 'ap-south-1',
+              userPoolId: config.userPoolId,
+              userPoolClientId: config.userPoolClientId,
+              loginWith: {
+                email: true
               }
             }
-          });
-          console.log('✅ Amplify configured with Cognito for production');
-        }
+          }
+        });
+        console.log('✅ Amplify configured with Cognito for production');
       }
     } catch (error) {
       console.error('Failed to configure Cognito:', error);

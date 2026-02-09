@@ -5,11 +5,39 @@
 
 import { LOCAL_USER, IS_LOCAL_MODE } from '@/config/local';
 
-// In development, use relative URLs so Vite proxy handles them
-// In production, use the environment variable or default
-const API_BASE_URL = import.meta.env.DEV
-  ? '' // Empty string means relative URLs, which will use Vite proxy
-  : (import.meta.env.VITE_API_URL || 'https://api.nutriwealth.com');
+// Determine API base URL based on environment
+const getApiBaseUrl = () => {
+  // First check if API URL is explicitly configured (for local dev with prod backend)
+  if (import.meta.env.VITE_API_URL) {
+    console.log('Using configured API URL:', import.meta.env.VITE_API_URL);
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // In development without explicit API URL, use relative URLs so Vite proxy handles them
+  if (import.meta.env.DEV) {
+    console.log('Using Vite proxy for API calls (relative URLs)');
+    return '';
+  }
+
+  // If hosted on triviz.cloud or ajna.cloud, try to auto-detect Lambda URL
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname.includes('triviz.cloud') || hostname.includes('ajna.cloud')) {
+      // Log warning that API URL should be configured
+      console.warn('⚠️ VITE_API_URL not configured. Please set your Lambda function URL.');
+      console.warn('Add VITE_API_URL to your environment variables or .env.production file');
+
+      // Return empty string to use relative URLs as fallback
+      // This allows the app to at least load without crashing
+      return '';
+    }
+  }
+
+  // Default fallback
+  return 'https://api.nutriwealth.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Helper to get auth headers
 function getAuthHeaders() {
@@ -590,12 +618,21 @@ class BackendApiClient {
           const queryString = params.toString();
           const url = `${API_BASE_URL}/v1/${this._table}${queryString ? `?${queryString}` : ''}`;
 
+          console.log(`[API] Fetching from: ${url}`);
+          console.log(`[API] Headers:`, getAuthHeaders());
+
           const response = await fetch(url, {
             headers: getAuthHeaders()
           });
 
+          console.log(`[API] Response status: ${response.status}`);
+
           if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[API] Error response body:`, errorText);
+
             if (response.status === 404) {
+              console.log(`[API] 404 - Table ${this._table} not found, checking localStorage fallback`);
               // Table doesn't exist in backend, use localStorage fallback
               let data = JSON.parse(localStorage.getItem(`mock_table_${this._table}`) || '[]');
 
@@ -617,18 +654,28 @@ class BackendApiClient {
                 data = data.slice(0, this._limitCount);
               }
 
+              console.log(`[API] Returning ${data.length} items from localStorage`);
               return { data, error: null };
             }
-            const errorData = await response.json().catch(() => ({}));
+
+            // Try to parse error as JSON
+            let errorData: any = {};
+            try {
+              errorData = JSON.parse(errorText);
+            } catch {
+              errorData = { error: errorText || `HTTP ${response.status}` };
+            }
+
             throw new Error(errorData.error || `HTTP ${response.status}`);
           }
 
           const data = await response.json();
+          console.log(`[API] Success - received ${Array.isArray(data) ? data.length : 'non-array'} items`);
           return { data, error: null };
         } catch (error) {
-          console.error(`Error fetching from ${this._table}:`, error);
-          // Fallback to empty array for reads
-          return { data: [], error: null };
+          console.error(`[API] Error fetching from ${this._table}:`, error);
+          // Return error instead of silently returning empty array
+          return { data: null, error: error as Error };
         }
       },
 
@@ -669,6 +716,133 @@ class BackendApiClient {
 
   removeChannel(channel: any) {
     console.log('Mock channel removed');
+  }
+
+  // HTTP methods for direct API calls
+  async post(url: string, data?: any): Promise<ApiResponse<any>> {
+    try {
+      const token = await this.getCurrentAuthToken();
+
+      const response = await fetch(`${this.baseUrl}${url}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData: any = {};
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `HTTP ${response.status}` };
+        }
+        throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      return { data: responseData, error: null };
+    } catch (error: any) {
+      console.error(`[API] POST ${url} error:`, error);
+      return { data: null, error };
+    }
+  }
+
+  async put(url: string, data?: any): Promise<ApiResponse<any>> {
+    try {
+      const token = await this.getCurrentAuthToken();
+
+      const response = await fetch(`${this.baseUrl}${url}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData: any = {};
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `HTTP ${response.status}` };
+        }
+        throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      return { data: responseData, error: null };
+    } catch (error: any) {
+      console.error(`[API] PUT ${url} error:`, error);
+      return { data: null, error };
+    }
+  }
+
+  async delete(url: string): Promise<ApiResponse<any>> {
+    try {
+      const token = await this.getCurrentAuthToken();
+
+      const response = await fetch(`${this.baseUrl}${url}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData: any = {};
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `HTTP ${response.status}` };
+        }
+        throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
+      }
+
+      const responseData = response.status === 204 ? { success: true } : await response.json();
+      return { data: responseData, error: null };
+    } catch (error: any) {
+      console.error(`[API] DELETE ${url} error:`, error);
+      return { data: null, error };
+    }
+  }
+
+  async get(url: string): Promise<ApiResponse<any>> {
+    try {
+      const token = await this.getCurrentAuthToken();
+
+      const response = await fetch(`${this.baseUrl}${url}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData: any = {};
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `HTTP ${response.status}` };
+        }
+        throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      return { data: responseData, error: null };
+    } catch (error: any) {
+      console.error(`[API] GET ${url} error:`, error);
+      return { data: null, error };
+    }
   }
 
   // Edge functions (for invitation redemption, etc.)

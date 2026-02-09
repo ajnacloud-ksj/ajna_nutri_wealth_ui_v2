@@ -130,6 +130,12 @@ const Capture = () => {
         try {
           const { data: statusData } = await backendApi.get(`/v1/analyze/status/${entryId}`);
 
+          if (!statusData) {
+            // Analysis not found yet, continue polling
+            console.log('Analysis not found yet, continuing to poll...');
+            return;
+          }
+
           if (statusData.status === 'completed') {
             clearInterval(pollInterval);
             setLoading(false);

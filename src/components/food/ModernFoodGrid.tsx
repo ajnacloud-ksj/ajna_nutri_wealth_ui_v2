@@ -39,22 +39,58 @@ export const ModernFoodGrid = ({
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const calculateTotals = (entry: FoodEntry) => {
-    const extractedNutrition = entry.extracted_nutrients?.meal_summary?.total_nutrition;
-    
-    if (extractedNutrition) {
-      return {
-        totalCalories: extractedNutrition.calories || 0,
-        totalProtein: extractedNutrition.proteins || 0,
-        totalCarbs: extractedNutrition.carbohydrates || 0,
-        totalFat: extractedNutrition.fats || 0,
-      };
+    // Parse extracted_nutrients if it's a string
+    let extractedData = entry.extracted_nutrients;
+    if (extractedData && typeof extractedData === 'string') {
+      try {
+        extractedData = JSON.parse(extractedData);
+      } catch (e) {
+        console.error('Failed to parse extracted_nutrients:', e);
+        extractedData = null;
+      }
     }
 
+    // Try multiple paths for nutrition data
+    if (extractedData) {
+      // Check for meal_summary.total_nutrition first
+      const mealNutrition = extractedData.meal_summary?.total_nutrition;
+      if (mealNutrition) {
+        return {
+          totalCalories: mealNutrition.calories || 0,
+          totalProtein: mealNutrition.proteins || 0,
+          totalCarbs: mealNutrition.carbohydrates || 0,
+          totalFat: mealNutrition.fats || 0,
+        };
+      }
+
+      // Check for direct nutrition values in extracted data
+      if (extractedData.calories || extractedData.proteins || extractedData.carbohydrates || extractedData.fats) {
+        return {
+          totalCalories: extractedData.calories || 0,
+          totalProtein: extractedData.proteins || 0,
+          totalCarbs: extractedData.carbohydrates || 0,
+          totalFat: extractedData.fats || 0,
+        };
+      }
+
+      // Check for total_calories and other variations
+      if (extractedData.total_calories || extractedData.total_protein || extractedData.total_carbohydrates || extractedData.total_fats) {
+        return {
+          totalCalories: extractedData.total_calories || extractedData.calories || 0,
+          totalProtein: extractedData.total_protein || extractedData.proteins || 0,
+          totalCarbs: extractedData.total_carbohydrates || extractedData.carbohydrates || 0,
+          totalFat: extractedData.total_fats || extractedData.fats || 0,
+        };
+      }
+    }
+
+    // Fallback to direct entry fields
     let totalCalories = entry.calories || 0;
     let totalProtein = entry.total_protein || 0;
     let totalCarbs = entry.total_carbohydrates || 0;
     let totalFat = entry.total_fats || 0;
 
+    // If still no data and we have food_items, calculate from them
     if (!totalCalories && entry.food_items?.length > 0) {
       entry.food_items.forEach(item => {
         const quantity = item.quantity || 1;
@@ -99,6 +135,8 @@ export const ModernFoodGrid = ({
           <Card
             key={entry.id}
             className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-0 bg-white/80 backdrop-blur-sm overflow-hidden"
+            role="button"
+            tabIndex={0}
             onClick={(e) => {
               // Prevent navigation if clicking on action buttons
               const target = e.target as HTMLElement;
@@ -106,7 +144,21 @@ export const ModernFoodGrid = ({
                 return;
               }
               console.log('Card clicked, navigating to:', entry.id);
-              onView(entry.id);
+              if (typeof onView === 'function') {
+                onView(entry.id);
+              } else {
+                console.error('onView is not a function:', onView);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (typeof onView === 'function') {
+                  onView(entry.id);
+                } else {
+                  console.error('onView is not a function in keyDown:', onView);
+                }
+              }
             }}
           >
             <div className="relative cursor-pointer">
@@ -170,13 +222,17 @@ export const ModernFoodGrid = ({
                   <span className="text-purple-600 font-medium">{Math.round(totalFat)}g fat</span>
                 </div>
                 <div className="flex gap-1">
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onView(entry.id);
+                      if (typeof onView === 'function') {
+                        onView(entry.id);
+                      } else {
+                        console.error('onView is not a function in button click:', onView);
+                      }
                     }}
                   >
                     <Eye className="h-4 w-4" />

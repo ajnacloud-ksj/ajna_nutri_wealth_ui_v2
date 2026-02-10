@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, Utensils, LayoutGrid, List } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
@@ -193,17 +193,31 @@ const Food = () => {
 
     // Get calories from extracted_nutrients if available, otherwise use direct calories field
     const getEntryCalories = (entry: FoodEntry) => {
-      if (entry.extracted_nutrients) {
-        const extracted = typeof entry.extracted_nutrients === 'string'
-          ? JSON.parse(entry.extracted_nutrients)
-          : entry.extracted_nutrients;
+      let extractedData = entry.extracted_nutrients;
 
-        return extracted?.total_calories ||
-               extracted?.meal_summary?.total_nutrition?.calories ||
-               extracted?.calories ||
-               entry.calories ||
-               0;
+      // Parse if it's a string
+      if (extractedData && typeof extractedData === 'string') {
+        try {
+          extractedData = JSON.parse(extractedData);
+        } catch (e) {
+          console.error('Failed to parse extracted_nutrients for calories:', e);
+          extractedData = null;
+        }
       }
+
+      if (extractedData) {
+        // Try multiple paths for calories
+        const calories = extractedData.total_calories ||
+                        extractedData.meal_summary?.total_nutrition?.calories ||
+                        extractedData.calories ||
+                        0;
+
+        if (calories && !isNaN(calories)) {
+          return calories;
+        }
+      }
+
+      // Fallback to direct calories field
       return entry.calories || 0;
     };
 
@@ -359,6 +373,11 @@ const Food = () => {
       toast.error("Failed to delete food entry");
     }
   };
+
+  // Memoize the navigation handlers to prevent recreation on every render
+  const handleViewEntry = useCallback((id: string) => {
+    navigate(`/food/${id}`);
+  }, [navigate]);
 
   if (loading) {
     return (
@@ -520,7 +539,7 @@ const Food = () => {
             {viewMode === 'grid' ? (
               <ModernFoodGrid
                 entries={filteredEntries}
-                onView={(id) => navigate(`/food/${id}`)}
+                onView={handleViewEntry}
                 onDelete={deleteFoodEntry}
                 getMealTypeFromEntry={getMealTypeFromEntry}
               />
@@ -529,7 +548,7 @@ const Food = () => {
                 <CardContent className="p-0">
                   <FoodTable
                     entries={filteredEntries}
-                    onView={(id) => navigate(`/food/${id}`)}
+                    onView={handleViewEntry}
                     onDelete={deleteFoodEntry}
                     getMealTypeFromEntry={getMealTypeFromEntry}
                   />

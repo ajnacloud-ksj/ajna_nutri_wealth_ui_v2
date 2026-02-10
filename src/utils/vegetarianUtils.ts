@@ -11,9 +11,7 @@ interface FoodItem {
 }
 
 interface FoodEntry {
-  extracted_nutrients?: {
-    food_items?: FoodItem[];
-  };
+  extracted_nutrients?: any; // Can be string or object
   calories?: number;
 }
 
@@ -46,7 +44,18 @@ export const calculateVegetarianPercentage = (entry: FoodEntry): {
 };
 
 export const calculateDetailedDietaryBreakdown = (entry: FoodEntry): DietaryBreakdown => {
-  const foodItems = entry.extracted_nutrients?.food_items || [];
+  // Parse extracted_nutrients if it's a string
+  let extractedData = entry.extracted_nutrients;
+  if (extractedData && typeof extractedData === 'string') {
+    try {
+      extractedData = JSON.parse(extractedData);
+    } catch (e) {
+      console.error('Failed to parse extracted_nutrients in vegetarianUtils:', e);
+      extractedData = null;
+    }
+  }
+
+  const foodItems = extractedData?.food_items || [];
   
   if (foodItems.length === 0) {
     return {

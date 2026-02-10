@@ -145,16 +145,49 @@ export const FoodTable = ({
   };
 
   const calculateTotals = (entry: FoodEntry) => {
-    // First try to get nutrition from extracted_nutrients
-    const extractedNutrition = entry.extracted_nutrients?.meal_summary?.total_nutrition;
-    
-    if (extractedNutrition) {
-      return {
-        totalCalories: extractedNutrition.calories || 0,
-        totalProtein: extractedNutrition.proteins || 0,
-        totalCarbs: extractedNutrition.carbohydrates || 0,
-        totalFat: extractedNutrition.fats || 0,
-      };
+    // Parse extracted_nutrients if it's a string
+    let extractedData = entry.extracted_nutrients;
+    if (extractedData && typeof extractedData === 'string') {
+      try {
+        extractedData = JSON.parse(extractedData);
+      } catch (e) {
+        console.error('Failed to parse extracted_nutrients:', e);
+        extractedData = null;
+      }
+    }
+
+    // Try multiple paths for nutrition data
+    if (extractedData) {
+      // Check for meal_summary.total_nutrition first
+      const mealNutrition = extractedData.meal_summary?.total_nutrition;
+      if (mealNutrition) {
+        return {
+          totalCalories: mealNutrition.calories || 0,
+          totalProtein: mealNutrition.proteins || 0,
+          totalCarbs: mealNutrition.carbohydrates || 0,
+          totalFat: mealNutrition.fats || 0,
+        };
+      }
+
+      // Check for direct nutrition values in extracted data
+      if (extractedData.calories || extractedData.proteins || extractedData.carbohydrates || extractedData.fats) {
+        return {
+          totalCalories: extractedData.calories || 0,
+          totalProtein: extractedData.proteins || 0,
+          totalCarbs: extractedData.carbohydrates || 0,
+          totalFat: extractedData.fats || 0,
+        };
+      }
+
+      // Check for total_calories and other variations
+      if (extractedData.total_calories || extractedData.total_protein || extractedData.total_carbohydrates || extractedData.total_fats) {
+        return {
+          totalCalories: extractedData.total_calories || extractedData.calories || 0,
+          totalProtein: extractedData.total_protein || extractedData.proteins || 0,
+          totalCarbs: extractedData.total_carbohydrates || extractedData.carbohydrates || 0,
+          totalFat: extractedData.total_fats || extractedData.fats || 0,
+        };
+      }
     }
 
     // Fallback to direct columns

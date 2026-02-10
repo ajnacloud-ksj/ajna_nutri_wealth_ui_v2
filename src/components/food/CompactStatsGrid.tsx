@@ -43,7 +43,7 @@ export const CompactStatsGrid = ({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-xs font-medium">Total Calories</p>
-              <p className="text-xl font-bold">{Math.round(totalCalories).toLocaleString()}</p>
+              <p className="text-xl font-bold">{isNaN(totalCalories) ? 0 : Math.round(totalCalories).toLocaleString()}</p>
             </div>
             <Zap className="h-6 w-6 text-blue-200" />
           </div>
@@ -55,7 +55,7 @@ export const CompactStatsGrid = ({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-xs font-medium">Avg Calories</p>
-              <p className="text-xl font-bold">{avgCalories}</p>
+              <p className="text-xl font-bold">{isNaN(avgCalories) ? 0 : avgCalories}</p>
             </div>
             <TrendingUp className="h-6 w-6 text-green-200" />
           </div>

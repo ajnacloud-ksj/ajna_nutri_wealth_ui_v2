@@ -192,25 +192,28 @@ export const uploadFile = async (file: File, userId: string) => {
   try {
     console.log(`Uploading file: ${file.name}, Size: ${file.size} bytes, Type: ${file.type}`);
 
-    // Step 1: Get presigned upload URL from backend
-    const response = await fetch('/v1/storage/upload-url', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('mock_token') || 'dev-user-1'}`
-      },
-      body: JSON.stringify({
-        filename: file.name,
-        content_type: file.type,
-        size_bytes: file.size
-      })
-    });
+    // Import the backend API client and token manager
+    const { backendApi } = await import('@/lib/api/client');
+    const { getAuthToken } = await import('@/lib/auth/tokenManager');
 
-    if (!response.ok) {
-      throw new Error(`Failed to get upload URL: ${response.statusText}`);
+    // Get the current auth token
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token available');
     }
 
-    const { upload_url, key, bucket } = await response.json();
+    // Step 1: Get presigned upload URL from backend using backendApi
+    const { data, error } = await backendApi.post('/v1/storage/upload-url', {
+      filename: file.name,
+      content_type: file.type,
+      size_bytes: file.size
+    });
+
+    if (error || !data) {
+      throw new Error(`Failed to get upload URL: ${error?.message || 'Unknown error'}`);
+    }
+
+    const { upload_url, key, bucket } = data;
     console.log(`Got presigned URL for S3 upload to key: ${key}`);
 
     // Step 2: Upload file directly to S3 using presigned URL

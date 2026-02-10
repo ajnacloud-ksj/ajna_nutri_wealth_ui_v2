@@ -159,14 +159,23 @@ const FoodDetails = () => {
     const extracted = entry.extracted_nutrients;
     const totalNutrition = extracted?.meal_summary?.total_nutrition;
 
-    // Prefer extracted nutrients over database fields since database fields are often 0
+    // Check multiple locations and field name variations for nutrition data
+    // Some entries have singular (protein, carb, fat) while others have plural (proteins, carbohydrates, fats)
     return {
       calories: getCaloriesFromData(entry),
-      proteins: totalNutrition?.proteins || entry.total_protein || 0,
-      carbohydrates: totalNutrition?.carbohydrates || entry.total_carbohydrates || 0,
-      fats: totalNutrition?.fats || entry.total_fats || 0,
-      fiber: totalNutrition?.fiber || entry.total_fiber || 0,
-      sodium: totalNutrition?.sodium || entry.total_sodium || 0,
+      proteins: totalNutrition?.proteins || totalNutrition?.protein ||
+                extracted?.proteins || extracted?.protein ||
+                extracted?.total_protein || entry.total_protein || 0,
+      carbohydrates: totalNutrition?.carbohydrates || totalNutrition?.carbs ||
+                     extracted?.carbohydrates || extracted?.carbs ||
+                     extracted?.total_carbohydrates || entry.total_carbohydrates || 0,
+      fats: totalNutrition?.fats || totalNutrition?.fat ||
+            extracted?.fats || extracted?.fat ||
+            extracted?.total_fats || entry.total_fats || 0,
+      fiber: totalNutrition?.fiber || extracted?.fiber ||
+             extracted?.total_fiber || entry.total_fiber || 0,
+      sodium: totalNutrition?.sodium || extracted?.sodium ||
+              extracted?.total_sodium || entry.total_sodium || 0,
     };
   };
 

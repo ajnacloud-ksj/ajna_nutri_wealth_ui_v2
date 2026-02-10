@@ -63,13 +63,14 @@ export const ModernFoodGrid = ({
         };
       }
 
-      // Check for direct nutrition values in extracted data
-      if (extractedData.calories || extractedData.proteins || extractedData.carbohydrates || extractedData.fats) {
+      // Check for direct nutrition values in extracted data (check both singular and plural forms)
+      if (extractedData.calories || extractedData.proteins || extractedData.protein ||
+          extractedData.carbohydrates || extractedData.carbs || extractedData.fats || extractedData.fat) {
         return {
           totalCalories: extractedData.calories || 0,
-          totalProtein: extractedData.proteins || 0,
-          totalCarbs: extractedData.carbohydrates || 0,
-          totalFat: extractedData.fats || 0,
+          totalProtein: extractedData.proteins || extractedData.protein || 0,
+          totalCarbs: extractedData.carbohydrates || extractedData.carbs || 0,
+          totalFat: extractedData.fats || extractedData.fat || 0,
         };
       }
 
@@ -95,9 +96,20 @@ export const ModernFoodGrid = ({
       entry.food_items.forEach(item => {
         const quantity = item.quantity || 1;
         totalCalories += (item.calories || 0) * quantity;
-        totalProtein += (item.proteins || 0) * quantity;
-        totalCarbs += (item.carbohydrates || 0) * quantity;
-        totalFat += (item.fats || 0) * quantity;
+        totalProtein += (item.proteins || item.protein || 0) * quantity;
+        totalCarbs += (item.carbohydrates || item.carbs || 0) * quantity;
+        totalFat += (item.fats || item.fat || 0) * quantity;
+      });
+    }
+
+    // Also check if we have food_items in extracted data
+    if (!totalCalories && extractedData?.food_items?.length > 0) {
+      extractedData.food_items.forEach((item: any) => {
+        const quantity = item.quantity || 1;
+        totalCalories += (item.calories || 0) * quantity;
+        totalProtein += (item.proteins || item.protein || 0) * quantity;
+        totalCarbs += (item.carbohydrates || item.carbs || 0) * quantity;
+        totalFat += (item.fats || item.fat || 0) * quantity;
       });
     }
 

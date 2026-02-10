@@ -96,17 +96,25 @@ export const ModernFoodGrid = ({
         const vegData = calculateVegetarianPercentage(entry);
         
         return (
-          <Card 
-            key={entry.id} 
+          <Card
+            key={entry.id}
             className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-0 bg-white/80 backdrop-blur-sm overflow-hidden"
-            onClick={() => onView(entry.id)}
+            onClick={(e) => {
+              // Prevent navigation if clicking on action buttons
+              const target = e.target as HTMLElement;
+              if (target.closest('button')) {
+                return;
+              }
+              console.log('Card clicked, navigating to:', entry.id);
+              onView(entry.id);
+            }}
           >
-            <div className="relative">
+            <div className="relative cursor-pointer">
               {entry.image_url && (
                 <div className="aspect-video w-full overflow-hidden bg-gray-100">
-                  <img 
-                    src={entry.image_url} 
-                    alt="Food" 
+                  <img
+                    src={entry.image_url}
+                    alt="Food"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                   />
                 </div>

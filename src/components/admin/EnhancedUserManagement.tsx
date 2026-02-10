@@ -8,6 +8,7 @@ import {
   Users, UserCheck, UserX, Shield, ShieldOff, Search,
   ChevronLeft, ChevronRight, Edit2, Power, UserCog
 } from "lucide-react";
+import { getAuthHeadersSync } from "@/lib/auth/tokenManager";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import {
@@ -105,8 +106,7 @@ const EnhancedUserManagement = () => {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/v1/admin/users/${userId}/role`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          ...getAuthHeadersSync()
         },
         body: JSON.stringify({ role })
       });
@@ -131,8 +131,7 @@ const EnhancedUserManagement = () => {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/v1/admin/users/${userId}/status`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          ...getAuthHeadersSync()
         },
         body: JSON.stringify({ is_active: isActive })
       });

@@ -69,8 +69,8 @@ export function initializeLocalAuth() {
       }
     }));
 
-    // Also update the auth_token and user for backendApi
-    localStorage.setItem('auth_token', LOCAL_USER.token);
+    // Also update the mock_token and user for backendApi
+    localStorage.setItem('mock_token', LOCAL_USER.token);
     localStorage.setItem('user', JSON.stringify({
       id: LOCAL_USER.id,
       email: LOCAL_USER.email,

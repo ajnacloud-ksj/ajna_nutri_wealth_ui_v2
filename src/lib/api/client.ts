@@ -4,6 +4,7 @@
  */
 
 import { LOCAL_USER, IS_LOCAL_MODE } from '@/config/local';
+import { getAuthToken, getAuthTokenSync, getAuthHeadersSync, clearAuthTokens } from '@/lib/auth/tokenManager';
 
 // Determine API base URL based on environment
 const getApiBaseUrl = () => {
@@ -39,36 +40,9 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
-// Helper to get auth headers
+// Helper to get auth headers (uses centralized token manager)
 function getAuthHeaders() {
-  // First try auth_token (which might be set by getCurrentAuthToken)
-  let token = localStorage.getItem('auth_token');
-
-  // If not found, try to get from Cognito storage
-  if (!token) {
-    const keys = Object.keys(localStorage);
-    const idTokenKey = keys.find(key =>
-      key.includes('CognitoIdentityServiceProvider') &&
-      key.endsWith('idToken')
-    );
-    if (idTokenKey) {
-      token = localStorage.getItem(idTokenKey);
-      // Store it for next time
-      if (token) {
-        localStorage.setItem('auth_token', token);
-      }
-    }
-  }
-
-  // Fallback for local dev
-  if (!token) {
-    token = localStorage.getItem('mock_token') || 'dev-user-1';
-  }
-
-  return {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  };
+  return getAuthHeadersSync();
 }
 
 interface ApiResponse<T = any> {
@@ -101,54 +75,11 @@ class BackendApiClient {
     this.baseUrl = baseUrl;
   }
 
-  // Get current auth token (from Cognito or localStorage)
+  // Get current auth token (uses centralized token manager)
   private async getCurrentAuthToken(): Promise<string | null> {
-    const isProductionUrl = this.baseUrl.includes('lambda-url') || this.baseUrl.includes('ajna.cloud') || this.baseUrl.includes('triviz.cloud');
-    const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl ? 'cognito' : 'local');
-
-    if (authMode === 'cognito') {
-      try {
-        const { fetchAuthSession } = await import('aws-amplify/auth');
-        // Force refresh if token is expired
-        const session = await fetchAuthSession({ forceRefresh: false });
-        const token = session.tokens?.idToken?.toString();
-        if (token) {
-          this.authToken = token;
-          // TEMPORARY: Also store in localStorage for parts of the app still using it
-          localStorage.setItem('auth_token', token);
-          return token;
-        }
-      } catch (error) {
-        console.log('No Cognito session available, checking for stored token');
-        // Try to get token from Cognito's storage as fallback
-        const keys = Object.keys(localStorage);
-        const idTokenKey = keys.find(key =>
-          key.includes('CognitoIdentityServiceProvider') &&
-          key.endsWith('idToken')
-        );
-        if (idTokenKey) {
-          const cognitoToken = localStorage.getItem(idTokenKey);
-          if (cognitoToken) {
-            // Store it as auth_token for compatibility
-            localStorage.setItem('auth_token', cognitoToken);
-            this.authToken = cognitoToken;
-            return cognitoToken;
-          }
-        }
-        // Clear any stale tokens
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user');
-      }
-    }
-
-    // Fallback to localStorage for local mode only
-    if (authMode === 'local') {
-      const storedToken = localStorage.getItem('auth_token');
-      this.authToken = storedToken;
-      return storedToken;
-    }
-
-    return null;
+    const token = await getAuthToken();
+    this.authToken = token;
+    return token;
   }
 
   // Helper method to make API requests
@@ -248,10 +179,7 @@ class BackendApiClient {
 
             const token = session.tokens?.idToken?.toString() || '';
             this.authToken = token;
-            // Store token for compatibility with parts of app that directly check localStorage
-            if (token) {
-              localStorage.setItem('auth_token', token);
-            }
+            // Token is now handled by Amplify and TokenManager
             localStorage.setItem('user', JSON.stringify(userInfo));
 
             return {
@@ -291,7 +219,7 @@ class BackendApiClient {
 
       const mockToken = btoa(`${credentials.email}:${credentials.password}`);
       this.authToken = mockToken;
-      localStorage.setItem('auth_token', mockToken);
+      localStorage.setItem('mock_token', mockToken);
       localStorage.setItem('user', JSON.stringify(mockUser));
 
       return {
@@ -418,15 +346,12 @@ class BackendApiClient {
       // Clear auth token
       this.authToken = null;
 
-      // Clear all auth-related localStorage items
-      const keysToRemove = Object.keys(localStorage).filter(key =>
-        key.includes('CognitoIdentityServiceProvider') ||
-        key.includes('amplify') ||
-        key.includes('aws') ||
-        key === 'auth_token' ||
-        key === 'user'
-      );
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      // Use centralized token clearing
+      clearAuthTokens();
+
+      // Clear user data
+      localStorage.removeItem('user');
+      localStorage.removeItem('mock_token');
 
       // Clear all auth-related sessionStorage items
       const sessionKeys = Object.keys(sessionStorage).filter(key =>
@@ -490,7 +415,7 @@ class BackendApiClient {
 
     getSession: async () => {
       const userStr = localStorage.getItem('user');
-      const token = localStorage.getItem('auth_token');
+      const token = await getAuthToken();
 
       if (!userStr || !token) {
         return { data: { session: null }, error: null };
@@ -533,8 +458,8 @@ class BackendApiClient {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              ...(localStorage.getItem('auth_token') && {
-                Authorization: `Bearer ${localStorage.getItem('auth_token')}`
+              ...(getAuthTokenSync() && {
+                Authorization: `Bearer ${getAuthTokenSync()}`
               })
             },
             body: JSON.stringify(records)

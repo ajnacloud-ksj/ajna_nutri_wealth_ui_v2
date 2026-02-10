@@ -190,16 +190,38 @@ const Food = () => {
 
   const stats = useMemo(() => {
     const totalEntries = filteredEntries.length;
-    const totalCalories = filteredEntries.reduce((sum, entry) => sum + (entry.calories || 0), 0);
+
+    // Get calories from extracted_nutrients if available, otherwise use direct calories field
+    const getEntryCalories = (entry: FoodEntry) => {
+      if (entry.extracted_nutrients) {
+        const extracted = typeof entry.extracted_nutrients === 'string'
+          ? JSON.parse(entry.extracted_nutrients)
+          : entry.extracted_nutrients;
+
+        return extracted?.total_calories ||
+               extracted?.meal_summary?.total_nutrition?.calories ||
+               extracted?.calories ||
+               entry.calories ||
+               0;
+      }
+      return entry.calories || 0;
+    };
+
+    const totalCalories = filteredEntries.reduce((sum, entry) => {
+      const calories = getEntryCalories(entry);
+      return sum + (isNaN(calories) ? 0 : calories);
+    }, 0);
+
     const avgCalories = totalEntries > 0 ? Math.round(totalCalories / totalEntries) : 0;
 
     let totalVegCalories = 0;
     let totalFilteredCalories = 0;
     filteredEntries.forEach(entry => {
       const vegData = calculateVegetarianPercentage(entry);
-      const entryCalories = entry.calories || 0;
-      totalFilteredCalories += entryCalories;
-      totalVegCalories += (entryCalories * vegData.percentage) / 100;
+      const entryCalories = getEntryCalories(entry);
+      const validCalories = isNaN(entryCalories) ? 0 : entryCalories;
+      totalFilteredCalories += validCalories;
+      totalVegCalories += (validCalories * vegData.percentage) / 100;
     });
 
     const overallVegPercentage = totalFilteredCalories > 0

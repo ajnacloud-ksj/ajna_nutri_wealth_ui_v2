@@ -159,13 +159,14 @@ const FoodDetails = () => {
     const extracted = entry.extracted_nutrients;
     const totalNutrition = extracted?.meal_summary?.total_nutrition;
 
+    // Prefer extracted nutrients over database fields since database fields are often 0
     return {
       calories: getCaloriesFromData(entry),
-      proteins: entry.total_protein || totalNutrition?.proteins || 0,
-      carbohydrates: entry.total_carbohydrates || totalNutrition?.carbohydrates || 0,
-      fats: entry.total_fats || totalNutrition?.fats || 0,
-      fiber: entry.total_fiber || totalNutrition?.fiber || 0,
-      sodium: entry.total_sodium || totalNutrition?.sodium || 0,
+      proteins: totalNutrition?.proteins || entry.total_protein || 0,
+      carbohydrates: totalNutrition?.carbohydrates || entry.total_carbohydrates || 0,
+      fats: totalNutrition?.fats || entry.total_fats || 0,
+      fiber: totalNutrition?.fiber || entry.total_fiber || 0,
+      sodium: totalNutrition?.sodium || entry.total_sodium || 0,
     };
   };
 

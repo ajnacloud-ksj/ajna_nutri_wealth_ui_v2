@@ -41,7 +41,30 @@ const API_BASE_URL = getApiBaseUrl();
 
 // Helper to get auth headers
 function getAuthHeaders() {
-  const token = localStorage.getItem('auth_token') || localStorage.getItem('mock_token') || 'dev-user-1';
+  // First try auth_token (which might be set by getCurrentAuthToken)
+  let token = localStorage.getItem('auth_token');
+
+  // If not found, try to get from Cognito storage
+  if (!token) {
+    const keys = Object.keys(localStorage);
+    const idTokenKey = keys.find(key =>
+      key.includes('CognitoIdentityServiceProvider') &&
+      key.endsWith('idToken')
+    );
+    if (idTokenKey) {
+      token = localStorage.getItem(idTokenKey);
+      // Store it for next time
+      if (token) {
+        localStorage.setItem('auth_token', token);
+      }
+    }
+  }
+
+  // Fallback for local dev
+  if (!token) {
+    token = localStorage.getItem('mock_token') || 'dev-user-1';
+  }
+
   return {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
@@ -91,11 +114,28 @@ class BackendApiClient {
         const token = session.tokens?.idToken?.toString();
         if (token) {
           this.authToken = token;
+          // TEMPORARY: Also store in localStorage for parts of the app still using it
+          localStorage.setItem('auth_token', token);
           return token;
         }
       } catch (error) {
-        console.log('No Cognito session available, user needs to login');
-        // Clear any stale tokens from localStorage
+        console.log('No Cognito session available, checking for stored token');
+        // Try to get token from Cognito's storage as fallback
+        const keys = Object.keys(localStorage);
+        const idTokenKey = keys.find(key =>
+          key.includes('CognitoIdentityServiceProvider') &&
+          key.endsWith('idToken')
+        );
+        if (idTokenKey) {
+          const cognitoToken = localStorage.getItem(idTokenKey);
+          if (cognitoToken) {
+            // Store it as auth_token for compatibility
+            localStorage.setItem('auth_token', cognitoToken);
+            this.authToken = cognitoToken;
+            return cognitoToken;
+          }
+        }
+        // Clear any stale tokens
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user');
       }
@@ -208,8 +248,10 @@ class BackendApiClient {
 
             const token = session.tokens?.idToken?.toString() || '';
             this.authToken = token;
-            // Don't store token manually - let Amplify handle it
-            // localStorage.setItem('auth_token', token);  // Remove this
+            // Store token for compatibility with parts of app that directly check localStorage
+            if (token) {
+              localStorage.setItem('auth_token', token);
+            }
             localStorage.setItem('user', JSON.stringify(userInfo));
 
             return {

@@ -40,7 +40,7 @@ jobs:
       # Cognito configuration (injected during build for better performance)
       user-pool-id: 'ap-south-1_DxH2t3WLy'
       user-pool-client-id: '1tn7u6t6mr5qr1quudqn89mpfd'
-      aws-region: 'ap-south-1'
+      cognito-region: 'ap-south-1'
     secrets:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
       CLOUDFRONT_DISTRIBUTION_ID: 'E3KAGPTHZ7N8J0'

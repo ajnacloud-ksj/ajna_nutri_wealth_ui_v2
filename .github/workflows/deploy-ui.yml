@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   deploy:
-    uses: ajnacloud-ksj/ajna-github-workflows/.github/workflows/reusable-static-site.yml@27be22d
+    uses: ajnacloud-ksj/ajna-github-workflows/.github/workflows/reusable-static-site.yml@main
     with:
       # AWS Configuration
       aws-region: 'ap-south-1'

@@ -33,9 +33,14 @@ jobs:
       # Backend API URL (injected as VITE_API_URL during build)
       # Backend API URL (hardcoded per user request)
       api-url: 'https://msitjd6d5voovsgvxlxvkcbe3u0viaiw.lambda-url.ap-south-1.on.aws/'
-      
+
       # Auth mode: 'local' or 'cognito'
       auth-mode: 'cognito'
+
+      # Cognito configuration (injected during build for better performance)
+      user-pool-id: 'ap-south-1_DxH2t3WLy'
+      user-pool-client-id: '1tn7u6t6mr5qr1quudqn89mpfd'
+      aws-region: 'ap-south-1'
     secrets:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
       CLOUDFRONT_DISTRIBUTION_ID: 'E3KAGPTHZ7N8J0'

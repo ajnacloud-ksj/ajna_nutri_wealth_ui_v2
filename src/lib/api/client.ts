@@ -86,21 +86,29 @@ class BackendApiClient {
     if (authMode === 'cognito') {
       try {
         const { fetchAuthSession } = await import('aws-amplify/auth');
-        const session = await fetchAuthSession();
+        // Force refresh if token is expired
+        const session = await fetchAuthSession({ forceRefresh: false });
         const token = session.tokens?.idToken?.toString();
         if (token) {
           this.authToken = token;
           return token;
         }
       } catch (error) {
-        console.log('No Cognito session available');
+        console.log('No Cognito session available, user needs to login');
+        // Clear any stale tokens from localStorage
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user');
       }
     }
 
-    // Fallback to localStorage for local mode
-    const storedToken = localStorage.getItem('auth_token');
-    this.authToken = storedToken;
-    return storedToken;
+    // Fallback to localStorage for local mode only
+    if (authMode === 'local') {
+      const storedToken = localStorage.getItem('auth_token');
+      this.authToken = storedToken;
+      return storedToken;
+    }
+
+    return null;
   }
 
   // Helper method to make API requests
@@ -200,7 +208,8 @@ class BackendApiClient {
 
             const token = session.tokens?.idToken?.toString() || '';
             this.authToken = token;
-            localStorage.setItem('auth_token', token);
+            // Don't store token manually - let Amplify handle it
+            // localStorage.setItem('auth_token', token);  // Remove this
             localStorage.setItem('user', JSON.stringify(userInfo));
 
             return {
@@ -352,6 +361,18 @@ class BackendApiClient {
     },
 
     signOut: async (): Promise<ApiResponse<void>> => {
+      const isProductionUrl = API_BASE_URL.includes('lambda-url') || API_BASE_URL.includes('ajna.cloud') || API_BASE_URL.includes('triviz.cloud');
+      const authMode = import.meta.env.VITE_AUTH_MODE || (isProductionUrl ? 'cognito' : 'local');
+
+      if (authMode === 'cognito') {
+        try {
+          const { signOut } = await import('aws-amplify/auth');
+          await signOut({ global: true }); // Global sign out to clear all sessions
+        } catch (error) {
+          console.error('Cognito sign out error:', error);
+        }
+      }
+
       // Clear auth token
       this.authToken = null;
 
@@ -384,7 +405,7 @@ class BackendApiClient {
         try {
           const { getCurrentUser, fetchAuthSession } = await import('aws-amplify/auth');
           const user = await getCurrentUser();
-          const session = await fetchAuthSession();
+          const session = await fetchAuthSession({ forceRefresh: false }); // Allow automatic refresh
 
           if (user && session.tokens) {
             // Get user email from localStorage if stored during sign in

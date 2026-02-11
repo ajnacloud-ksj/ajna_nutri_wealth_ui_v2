@@ -89,10 +89,14 @@ export const ModernFoodGrid = ({
                 return;
               }
               console.log('Card clicked, navigating to:', entry.id);
+
+              // Try the onView function if available
               if (typeof onView === 'function') {
                 onView(entry.id);
               } else {
-                console.error('onView is not a function:', onView);
+                // Fallback: Navigate directly using window.location
+                console.log('Using fallback navigation');
+                window.location.href = `/food/${entry.id}`;
               }
             }}
             onKeyDown={(e) => {

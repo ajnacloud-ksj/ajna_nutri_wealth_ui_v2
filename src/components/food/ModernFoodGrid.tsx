@@ -39,81 +39,14 @@ export const ModernFoodGrid = ({
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const calculateTotals = (entry: FoodEntry) => {
-    // Parse extracted_nutrients if it's a string
-    let extractedData = entry.extracted_nutrients;
-    if (extractedData && typeof extractedData === 'string') {
-      try {
-        extractedData = JSON.parse(extractedData);
-      } catch (e) {
-        console.error('Failed to parse extracted_nutrients:', e);
-        extractedData = null;
-      }
-    }
-
-    // Try multiple paths for nutrition data
-    if (extractedData) {
-      // Check for meal_summary.total_nutrition first
-      const mealNutrition = extractedData.meal_summary?.total_nutrition;
-      if (mealNutrition) {
-        return {
-          totalCalories: mealNutrition.calories || 0,
-          totalProtein: mealNutrition.proteins || 0,
-          totalCarbs: mealNutrition.carbohydrates || 0,
-          totalFat: mealNutrition.fats || 0,
-        };
-      }
-
-      // Check for direct nutrition values in extracted data (check both singular and plural forms)
-      if (extractedData.calories || extractedData.proteins || extractedData.protein ||
-          extractedData.carbohydrates || extractedData.carbs || extractedData.fats || extractedData.fat) {
-        return {
-          totalCalories: extractedData.calories || 0,
-          totalProtein: extractedData.proteins || extractedData.protein || 0,
-          totalCarbs: extractedData.carbohydrates || extractedData.carbs || 0,
-          totalFat: extractedData.fats || extractedData.fat || 0,
-        };
-      }
-
-      // Check for total_calories and other variations
-      if (extractedData.total_calories || extractedData.total_protein || extractedData.total_carbohydrates || extractedData.total_fats) {
-        return {
-          totalCalories: extractedData.total_calories || extractedData.calories || 0,
-          totalProtein: extractedData.total_protein || extractedData.proteins || 0,
-          totalCarbs: extractedData.total_carbohydrates || extractedData.carbohydrates || 0,
-          totalFat: extractedData.total_fats || extractedData.fats || 0,
-        };
-      }
-    }
-
-    // Fallback to direct entry fields
-    let totalCalories = entry.calories || 0;
-    let totalProtein = entry.total_protein || 0;
-    let totalCarbs = entry.total_carbohydrates || 0;
-    let totalFat = entry.total_fats || 0;
-
-    // If still no data and we have food_items, calculate from them
-    if (!totalCalories && entry.food_items?.length > 0) {
-      entry.food_items.forEach(item => {
-        const quantity = item.quantity || 1;
-        totalCalories += (item.calories || 0) * quantity;
-        totalProtein += (item.proteins || item.protein || 0) * quantity;
-        totalCarbs += (item.carbohydrates || item.carbs || 0) * quantity;
-        totalFat += (item.fats || item.fat || 0) * quantity;
-      });
-    }
-
-    // Also check if we have food_items in extracted data
-    if (!totalCalories && extractedData?.food_items?.length > 0) {
-      extractedData.food_items.forEach((item: any) => {
-        const quantity = item.quantity || 1;
-        totalCalories += (item.calories || 0) * quantity;
-        totalProtein += (item.proteins || item.protein || 0) * quantity;
-        totalCarbs += (item.carbohydrates || item.carbs || 0) * quantity;
-        totalFat += (item.fats || item.fat || 0) * quantity;
-      });
-    }
-
-    return { totalCalories, totalProtein, totalCarbs, totalFat };
+    // Backend computes these values on the fly from food_items
+    // We just display what the backend returns
+    return {
+      totalCalories: entry.calories || 0,
+      totalProtein: entry.total_protein || 0,
+      totalCarbs: entry.total_carbohydrates || 0,
+      totalFat: entry.total_fats || 0
+    };
   };
 
   const getMealTypeColor = (mealType: string) => {

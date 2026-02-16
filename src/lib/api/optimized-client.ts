@@ -104,8 +104,11 @@ export class OptimizedApiClient {
         query = query.order(orderBy.column, { ascending: orderBy.ascending });
       }
 
-      // Apply pagination using limit (since range doesn't exist)
+      // Apply pagination with limit and offset
       query = query.limit(pageSize);
+      if (start > 0) {
+        query = query.offset(start);
+      }
 
       const result = await query;
 

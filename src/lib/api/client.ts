@@ -445,6 +445,7 @@ class BackendApiClient {
       _filters: [] as Array<{ column: string; operator: string; value: any }>,
       _orderBy: null as { column: string; ascending: boolean } | null,
       _limitCount: null as number | null,
+      _offsetCount: null as number | null,
       _selectColumns: '*',
 
       select: function (columns = '*') {
@@ -568,6 +569,11 @@ class BackendApiClient {
         return this;
       },
 
+      offset: function (count: number) {
+        this._offsetCount = count;
+        return this;
+      },
+
       single: async function () {
         const result = await this.execute();
         if (result.error) return { data: null, error: result.error };
@@ -601,6 +607,11 @@ class BackendApiClient {
           // Add limit
           if (this._limitCount !== null) {
             params.append('limit', this._limitCount.toString());
+          }
+
+          // Add offset for pagination
+          if (this._offsetCount !== null) {
+            params.append('offset', this._offsetCount.toString());
           }
 
           const queryString = params.toString();

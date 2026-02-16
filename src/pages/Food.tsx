@@ -292,9 +292,12 @@ const Food = () => {
       // Handle both array response and empty response
       let processedEntries = [];
 
-      if (entriesData && Array.isArray(entriesData)) {
+      // Check if entriesData is wrapped in a data property (backend returns {data: [...], success: true})
+      const actualData = entriesData?.data || entriesData;
+
+      if (actualData && Array.isArray(actualData)) {
         // Process entries (removed food_items join - not used in UI)
-        processedEntries = entriesData
+        processedEntries = actualData
           .map((entry: any) => {
             // Parse JSON strings if they exist
             if (entry.extracted_nutrients && typeof entry.extracted_nutrients === 'string') {
@@ -320,12 +323,12 @@ const Food = () => {
 
         // Sort desc
         processedEntries.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      } else if (entriesData === null || entriesData === undefined) {
+      } else if (actualData === null || actualData === undefined) {
         // API returned null/undefined - treat as empty
         processedEntries = [];
         console.log('API returned null/undefined, treating as empty array');
       } else {
-        console.warn('Unexpected response format:', entriesData);
+        console.warn('Unexpected response format:', actualData);
         processedEntries = [];
       }
 

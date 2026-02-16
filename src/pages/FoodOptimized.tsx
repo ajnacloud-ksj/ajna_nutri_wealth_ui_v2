@@ -57,20 +57,9 @@ const FoodOptimized = () => {
   const [selectedMealType, setSelectedMealType] = useState('all');
   const [selectedDietType, setSelectedDietType] = useState('all');
 
-  // Default to 3 days ago for start date
-  const [startDate, setStartDate] = useState<Date | undefined>(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 3);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  });
-
-  // Default to today for end date
-  const [endDate, setEndDate] = useState<Date | undefined>(() => {
-    const date = new Date();
-    date.setHours(23, 59, 59, 999);
-    return date;
-  });
+  // No default date filters - show all entries
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const getMealTypeFromEntry = (entry: FoodEntry) => {
     return entry.extracted_nutrients?.meal_summary?.meal_type ||

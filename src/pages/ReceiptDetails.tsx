@@ -46,8 +46,17 @@ const ReceiptDetails = () => {
         throw new Error("Receipt not found");
       }
 
-      setReceipt(response.data);
-      setEditedData(response.data);
+      const r = response.data;
+      // Sanitize bad AI placeholder values
+      if (!r.vendor || r.vendor.toLowerCase() === 'string' || r.vendor.toLowerCase() === 'n/a') {
+        r.vendor = 'Unknown Vendor';
+      }
+      if (!r.receipt_date || r.receipt_date.includes('YYYY') || r.receipt_date === 'string') {
+        r.receipt_date = r.created_at;
+      }
+
+      setReceipt(r);
+      setEditedData(r);
     } catch (error: any) {
       console.error('Error fetching receipt:', error);
       toast.error("Failed to load receipt");
@@ -79,7 +88,10 @@ const ReceiptDetails = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString || dateString === 'string' || dateString.includes('YYYY')) return 'N/A';
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return 'N/A';
+    return d.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -390,7 +402,7 @@ const ReceiptDetails = () => {
                                       }
                                     </td>
                                     <td className="py-3">{item.quantity || 1}</td>
-                                    <td className="py-3 font-medium">{formatCurrency(item.price || 0)}</td>
+                                    <td className="py-3 font-medium">{formatCurrency(item.total_price || item.unit_price || item.price || 0)}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -411,7 +423,7 @@ const ReceiptDetails = () => {
                                     )}
                                   </div>
                                   <div className="text-right">
-                                    <div className="font-medium">{formatCurrency(item.price || 0)}</div>
+                                    <div className="font-medium">{formatCurrency(item.total_price || item.unit_price || item.price || 0)}</div>
                                     <div className="text-sm text-gray-600">Qty: {item.quantity || 1}</div>
                                   </div>
                                 </div>

@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import SimpleModelManager from "@/components/admin/SimpleModelManager";
 import EnhancedUserManagement from "@/components/admin/EnhancedUserManagement";
+import DatabaseManager from "@/components/admin/DatabaseManager";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -102,6 +103,7 @@ const Admin = () => {
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="dashboard">Analytics</TabsTrigger>
             <TabsTrigger value="models">AI Models</TabsTrigger>
+            <TabsTrigger value="database">Database</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -114,6 +116,10 @@ const Admin = () => {
 
           <TabsContent value="models">
             <SimpleModelManager />
+          </TabsContent>
+
+          <TabsContent value="database">
+            <DatabaseManager />
           </TabsContent>
         </Tabs>
       </div>

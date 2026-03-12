@@ -25,19 +25,19 @@ export const FoodDetailsSidebar = ({ totalNutrition, mealSummary, healthAssessme
             <div className="grid grid-cols-2 gap-3">
               <div className="text-center p-3 bg-orange-50 rounded-lg">
                 <Flame className="h-4 w-4 text-orange-600 mx-auto mb-1" />
-                <div className="text-lg font-bold text-orange-700">{totalNutrition.calories || 0}</div>
+                <div className="text-lg font-bold text-orange-700">{Math.round(Number(totalNutrition.calories) || 0)}</div>
                 <div className="text-xs text-gray-600">Calories</div>
               </div>
               <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <div className="text-lg font-bold text-blue-700">{totalNutrition.proteins || 0}g</div>
+                <div className="text-lg font-bold text-blue-700">{Math.round((Number(totalNutrition.proteins) || 0) * 10) / 10}g</div>
                 <div className="text-xs text-gray-600">Protein</div>
               </div>
               <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                <div className="text-lg font-bold text-yellow-700">{totalNutrition.carbohydrates || 0}g</div>
+                <div className="text-lg font-bold text-yellow-700">{Math.round((Number(totalNutrition.carbohydrates) || 0) * 10) / 10}g</div>
                 <div className="text-xs text-gray-600">Carbs</div>
               </div>
               <div className="text-center p-3 bg-purple-50 rounded-lg">
-                <div className="text-lg font-bold text-purple-700">{totalNutrition.fats || 0}g</div>
+                <div className="text-lg font-bold text-purple-700">{Math.round((Number(totalNutrition.fats) || 0) * 10) / 10}g</div>
                 <div className="text-xs text-gray-600">Fat</div>
               </div>
             </div>

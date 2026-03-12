@@ -102,7 +102,7 @@ export const ReceiptCard = ({ receipt, onView, onDelete }: ReceiptCardProps) => 
                       {itemCount} items
                     </Badge>
                   )}
-                  {receipt.tags && receipt.tags.slice(0, 2).map((tag, index) => (
+                  {Array.isArray(receipt.tags) && receipt.tags.slice(0, 2).map((tag, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
                       {tag}
                     </Badge>

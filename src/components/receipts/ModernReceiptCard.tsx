@@ -146,7 +146,7 @@ export const ModernReceiptCard = ({ receipt, onView, onDelete }: ModernReceiptCa
               >
                 {spendingCategory.text}
               </Badge>
-              {receipt.tags && receipt.tags.slice(0, 1).map((tag, index) => (
+              {Array.isArray(receipt.tags) && receipt.tags.slice(0, 1).map((tag, index) => (
                 <Badge key={index} variant="secondary" className="text-xs">
                   {tag}
                 </Badge>

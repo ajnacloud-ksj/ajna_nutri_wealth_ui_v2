@@ -486,7 +486,7 @@ const ReceiptDetails = () => {
                         </CardHeader>
                         <CardContent>
                           <div className="flex gap-2 flex-wrap">
-                            {receipt.tags.map((tag, index) => (
+                            {Array.isArray(receipt.tags) && receipt.tags.map((tag, index) => (
                               <Badge key={index} variant="secondary">{tag}</Badge>
                             ))}
                           </div>

@@ -100,9 +100,9 @@ const Workouts = () => {
       setWorkouts(userWorkouts);
 
       // Calculate stats
-      const totalWorkouts = data?.length || 0;
-      const totalDuration = data?.reduce((sum, workout) => sum + (workout.duration || 0), 0) || 0;
-      const totalCalories = data?.reduce((sum, workout) => sum + (workout.calories_burned || 0), 0) || 0;
+      const totalWorkouts = userWorkouts?.length || 0;
+      const totalDuration = userWorkouts?.reduce((sum: number, workout: any) => sum + (workout.duration || 0), 0) || 0;
+      const totalCalories = userWorkouts?.reduce((sum: number, workout: any) => sum + (workout.calories_burned || 0), 0) || 0;
       const avgDuration = totalWorkouts > 0 ? Math.round(totalDuration / totalWorkouts) : 0;
 
       setStats({ totalWorkouts, totalDuration, totalCalories, avgDuration });

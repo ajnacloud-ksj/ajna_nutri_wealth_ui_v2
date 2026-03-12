@@ -113,6 +113,10 @@ const Capture = () => {
 
       console.log('[Capture] Response:', asyncResult);
 
+      if (!asyncResult || !asyncResult.entry_id) {
+        throw new Error(asyncResult?.error || 'Failed to start analysis - no entry ID returned');
+      }
+
       const entryId = asyncResult.entry_id;
 
       // Show instant feedback

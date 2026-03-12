@@ -859,9 +859,7 @@ class BackendApiClient {
         }
 
         if (functionName === 'redeem-invitation') {
-          return t
-
-('/v1/invitations/redeem', options.body);
+          return this.post('/v1/invitations/redeem', options.body);
         }
 
         if (functionName === 'app-version') {

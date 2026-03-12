@@ -287,7 +287,7 @@ const ReceiptDetails = () => {
 
   const hasAddress = receipt.store_address || receipt.city || receipt.state;
   const hasPaymentInfo = receipt.payment_method || receipt.card_last_digits;
-  const hasFinancialBreakdown = (receipt.subtotal && receipt.subtotal !== receipt.total_amount) || receipt.tax_amount || receipt.discount_amount;
+  const hasFinancialBreakdown = (receipt.subtotal != null && receipt.subtotal !== receipt.total_amount) || (receipt.tax_amount != null && receipt.tax_amount > 0) || (receipt.discount_amount != null && receipt.discount_amount > 0);
 
   return (
     <SidebarLayout>
@@ -422,22 +422,12 @@ const ReceiptDetails = () => {
               footer={
                 items.length > 0 ? (
                   <tr className="bg-green-50/80 border-t-2 border-green-200">
-                    <td className="px-4 py-3" colSpan={4}>
+                    <td className="px-4 py-3" colSpan={6}>
                       <span className="font-semibold text-gray-700">Total ({items.length} items)</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="font-mono text-sm text-gray-600">
-                        {formatCurrency(items.reduce((s, i) => s + (i.unit_price || 0), 0))}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-sm text-green-600">
-                        {items.some(i => i.discount) ? `-${formatCurrency(items.reduce((s, i) => s + (i.discount || 0), 0))}` : "—"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
                       <span className="font-bold font-mono text-green-700">
-                        {formatCurrency(itemsSubtotal)}
+                        {formatCurrency(receipt.total_amount)}
                       </span>
                     </td>
                     <td className="px-4 py-3"></td>

@@ -1,6 +1,6 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Receipt, DollarSign, Calendar, TrendingUp, Store, ShoppingCart } from "lucide-react";
+import { Receipt, DollarSign, Calendar, TrendingUp } from "lucide-react";
 
 interface ReceiptEntry {
   id: string;
@@ -31,17 +31,6 @@ export const CompactReceiptStatsGrid = ({ receipts }: CompactReceiptStatsGridPro
   });
   const thisMonthAmount = thisMonthReceipts.reduce((sum, receipt) => sum + (receipt.total_amount || 0), 0);
 
-  // Get unique vendors
-  const uniqueVendors = new Set(receipts.map(receipt => receipt.vendor).filter(Boolean)).size;
-
-  // Get total items
-  const totalItems = receipts.reduce((sum, receipt) => {
-    if (!receipt.items) return sum;
-    if (Array.isArray(receipt.items)) return sum + receipt.items.length;
-    if (receipt.items.items && Array.isArray(receipt.items.items)) return sum + receipt.items.items.length;
-    return sum;
-  }, 0);
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -50,7 +39,7 @@ export const CompactReceiptStatsGrid = ({ receipts }: CompactReceiptStatsGridPro
   };
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       <Card className="bg-gradient-to-br from-orange-500 to-red-500 text-white border-0 shadow-md">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
@@ -87,38 +76,14 @@ export const CompactReceiptStatsGrid = ({ receipts }: CompactReceiptStatsGridPro
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-purple-500 to-pink-500 text-white border-0 shadow-md">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-xs font-medium">Avg Spending</p>
-              <p className="text-xl font-bold">{formatCurrency(avgAmount)}</p>
-            </div>
-            <TrendingUp className="h-6 w-6 text-purple-200" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-gradient-to-br from-indigo-500 to-blue-600 text-white border-0 shadow-md">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-indigo-100 text-xs font-medium">Unique Stores</p>
-              <p className="text-xl font-bold">{uniqueVendors}</p>
-            </div>
-            <Store className="h-6 w-6 text-indigo-200" />
-          </div>
-        </CardContent>
-      </Card>
-
       <Card className="bg-gradient-to-br from-emerald-500 to-green-600 text-white border-0 shadow-md">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-emerald-100 text-xs font-medium">Total Items</p>
-              <p className="text-xl font-bold">{totalItems}</p>
+              <p className="text-emerald-100 text-xs font-medium">Avg Spending</p>
+              <p className="text-xl font-bold">{formatCurrency(avgAmount)}</p>
             </div>
-            <ShoppingCart className="h-6 w-6 text-emerald-200" />
+            <TrendingUp className="h-6 w-6 text-emerald-200" />
           </div>
         </CardContent>
       </Card>

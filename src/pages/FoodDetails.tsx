@@ -142,21 +142,22 @@ const FoodDetails = () => {
 
     // Check multiple locations and field name variations for nutrition data
     // Some entries have singular (protein, carb, fat) while others have plural (proteins, carbohydrates, fats)
+    const r = (v: any) => Math.round((Number(v) || 0) * 10) / 10;
     return {
-      calories: getCaloriesFromData(entry),
-      proteins: totalNutrition?.proteins || totalNutrition?.protein ||
+      calories: Math.round(Number(getCaloriesFromData(entry)) || 0),
+      proteins: r(totalNutrition?.proteins || totalNutrition?.protein ||
                 extracted?.proteins || extracted?.protein ||
-                extracted?.total_protein || entry.total_protein || 0,
-      carbohydrates: totalNutrition?.carbohydrates || totalNutrition?.carbs ||
+                extracted?.total_protein || entry.total_protein || 0),
+      carbohydrates: r(totalNutrition?.carbohydrates || totalNutrition?.carbs ||
                      extracted?.carbohydrates || extracted?.carbs ||
-                     extracted?.total_carbohydrates || entry.total_carbohydrates || 0,
-      fats: totalNutrition?.fats || totalNutrition?.fat ||
+                     extracted?.total_carbohydrates || entry.total_carbohydrates || 0),
+      fats: r(totalNutrition?.fats || totalNutrition?.fat ||
             extracted?.fats || extracted?.fat ||
-            extracted?.total_fats || entry.total_fats || 0,
-      fiber: totalNutrition?.fiber || extracted?.fiber ||
-             extracted?.total_fiber || entry.total_fiber || 0,
-      sodium: totalNutrition?.sodium || extracted?.sodium ||
-              extracted?.total_sodium || entry.total_sodium || 0,
+            extracted?.total_fats || entry.total_fats || 0),
+      fiber: r(totalNutrition?.fiber || extracted?.fiber ||
+             extracted?.total_fiber || entry.total_fiber || 0),
+      sodium: r(totalNutrition?.sodium || extracted?.sodium ||
+              extracted?.total_sodium || entry.total_sodium || 0),
     };
   };
 

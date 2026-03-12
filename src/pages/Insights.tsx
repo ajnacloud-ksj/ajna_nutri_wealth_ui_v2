@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface InsightData {
   totalFoodEntries: number;
@@ -26,6 +27,7 @@ interface InsightData {
 const Insights = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const [insights, setInsights] = useState<InsightData>({
     totalFoodEntries: 0,
     totalCalories: 0,
@@ -43,21 +45,17 @@ const Insights = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
     fetchInsights();
-  }, []);
+  }, [user, navigate]);
 
   const fetchInsights = async () => {
+    if (!user) return;
+
     try {
-      // Mock Auth Check (or use useAuth context if available, but for now accessing api direct)
-      // Ideally we use the user from useAuth() passed in or accessed via context, 
-      // but to minimize churn we'll assume we can use the stored token logic or just proceed.
-      // Actually `backendApi.auth.getUser()` was used. Let's rely on api client to handle request auth,
-      // but we need the user ID for filtering.
-      // A temporary hack is to fetch all users and find logic or rely on `useAuth`.
-      // Let's import useAuth.
-      // Wait, I can't easily add useContext here without changing function signature if I don't import it.
-      // I will import `useAuth` at the top.
-      const user = { id: 'test-user-id' }; // Placeholder until useAuth is wired
 
       // Fetch food data
       const { data: allFood } = await backendApi.from('food_entries').select();

@@ -49,7 +49,6 @@ const FoodDetails = () => {
     }
     if (id) {
       fetchFoodDetails();
-      fetchCommentCount();
     }
   }, [id, user, navigate]);
 
@@ -95,24 +94,6 @@ const FoodDetails = () => {
       navigate("/food");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchCommentCount = async () => {
-    if (!user || !id) return;
-
-    try {
-      // Mock Count
-      const { data: allComments } = await api.from('participant_comments').select();
-      const count = allComments?.filter((c: any) =>
-        c.participant_id === user.id &&
-        c.content_type === 'food_entry' &&
-        c.content_id === id
-      ).length || 0;
-
-      setCommentCount(count);
-    } catch (error) {
-      console.error('Error fetching comment count:', error);
     }
   };
 

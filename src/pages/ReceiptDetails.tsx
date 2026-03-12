@@ -123,7 +123,7 @@ const ReceiptDetails = () => {
   }
 
   const receiptData = receipt.items;
-  const items = receiptData?.items || receiptData;
+  const items = Array.isArray(receiptData) ? receiptData : (receiptData?.items || []);
 
   return (
     <SidebarLayout>

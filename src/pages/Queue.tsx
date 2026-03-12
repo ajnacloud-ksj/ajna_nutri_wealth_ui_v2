@@ -143,12 +143,12 @@ const Queue = () => {
                             {job.analysis_result.description || job.description}
                           </p>
                           <p className="text-sm text-green-700 mt-1">
-                            {job.analysis_result.calories || 0} calories • {job.analysis_result.meal_type || job.category}
+                            {job.analysis_result?.calories || 0} calories • {job.analysis_result?.meal_type || job.category}
                           </p>
                         </div>
                         <Button
                           size="sm"
-                          onClick={() => window.location.href = `/food/${job.analysis_result.food_entry_id || job.id}`}
+                          onClick={() => window.location.href = `/food/${job.analysis_result?.food_entry_id || job.id}`}
                         >
                           View Details
                         </Button>

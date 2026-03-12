@@ -81,8 +81,14 @@ const Workouts = () => {
 
       // Fetch workouts
       const { data: workoutsData } = await backendApi.from('workouts').select();
-      // Fetch exercises
-      const { data: exercisesData } = await backendApi.from('workout_exercises').select();
+      // Fetch exercises (may not exist yet, that's OK)
+      let exercisesData: any[] | null = null;
+      try {
+        const result = await backendApi.from('workout_exercises').select();
+        exercisesData = result.data;
+      } catch {
+        console.warn('workout_exercises table not available yet');
+      }
 
       if (!workoutsData) throw new Error("Failed to fetch workouts");
 

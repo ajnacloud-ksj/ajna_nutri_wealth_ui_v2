@@ -67,7 +67,12 @@ const Receipts = () => {
       const response = await backendApi.get('/v1/receipts');
 
       // Backend returns {receipts: [...], total: number}
-      const userReceipts = response.data?.receipts || [];
+      const userReceipts = (response.data?.receipts || []).map((r: any) => ({
+        ...r,
+        // Sanitize bad AI placeholder values
+        vendor: (!r.vendor || r.vendor.toLowerCase() === 'string' || r.vendor.toLowerCase() === 'n/a') ? 'Unknown Vendor' : r.vendor,
+        receipt_date: (!r.receipt_date || r.receipt_date.includes('YYYY') || r.receipt_date === 'string') ? r.created_at : r.receipt_date,
+      }));
 
       // Backend already sorts by created_at desc, but we can ensure it
       userReceipts.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

@@ -67,7 +67,7 @@ export const WorkoutBasicInfo = ({ workout, editing, editedData, onEditedDataCha
           ) : (
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-blue-500" />
-              <span className="text-gray-900 font-medium">{formatDuration(workout.duration || 0)}</span>
+              <span className="text-gray-900 font-medium">{formatDuration(workout.duration || workout.duration_minutes || 0)}</span>
             </div>
           )}
         </div>
@@ -96,7 +96,7 @@ export const WorkoutBasicInfo = ({ workout, editing, editedData, onEditedDataCha
           <h4 className="text-sm font-medium mb-2">Quick Stats</h4>
           <div className="grid grid-cols-2 gap-3">
             <div className="text-center p-3 bg-blue-50 rounded-lg">
-              <div className="text-lg font-bold text-blue-600">{formatDuration(workout.duration || 0)}</div>
+              <div className="text-lg font-bold text-blue-600">{formatDuration(workout.duration || workout.duration_minutes || 0)}</div>
               <div className="text-xs text-gray-600">Duration</div>
             </div>
             <div className="text-center p-3 bg-orange-50 rounded-lg">

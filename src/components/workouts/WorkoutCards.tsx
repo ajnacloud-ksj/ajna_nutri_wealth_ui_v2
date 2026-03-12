@@ -73,7 +73,7 @@ export const WorkoutCards = ({ workouts, onDelete, onView }: WorkoutCardsProps) 
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-medium">{formatDuration(workout.duration || 0)}</span>
+                  <span className="text-sm font-medium">{formatDuration(workout.duration || workout.duration_minutes || 0)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Flame className="h-4 w-4 text-orange-500" />

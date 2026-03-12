@@ -107,7 +107,7 @@ const Workouts = () => {
 
       // Calculate stats
       const totalWorkouts = userWorkouts?.length || 0;
-      const totalDuration = userWorkouts?.reduce((sum: number, workout: any) => sum + (workout.duration || 0), 0) || 0;
+      const totalDuration = userWorkouts?.reduce((sum: number, workout: any) => sum + (workout.duration || workout.duration_minutes || 0), 0) || 0;
       const totalCalories = userWorkouts?.reduce((sum: number, workout: any) => sum + (workout.calories_burned || 0), 0) || 0;
       const avgDuration = totalWorkouts > 0 ? Math.round(totalDuration / totalWorkouts) : 0;
 
@@ -155,7 +155,7 @@ const Workouts = () => {
     // Duration range filter
     if (minDuration || maxDuration) {
       filtered = filtered.filter(workout => {
-        const duration = workout.duration || 0;
+        const duration = workout.duration || workout.duration_minutes || 0;
         const min = minDuration ? parseInt(minDuration) : 0;
         const max = maxDuration ? parseInt(maxDuration) : Infinity;
         return duration >= min && duration <= max;
@@ -180,9 +180,9 @@ const Workouts = () => {
         case 'date-asc':
           return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         case 'duration-desc':
-          return (b.duration || 0) - (a.duration || 0);
+          return (b.duration || b.duration_minutes || 0) - (a.duration || a.duration_minutes || 0);
         case 'duration-asc':
-          return (a.duration || 0) - (b.duration || 0);
+          return (a.duration || a.duration_minutes || 0) - (b.duration || b.duration_minutes || 0);
         case 'calories-desc':
           return (b.calories_burned || 0) - (a.calories_burned || 0);
         case 'calories-asc':

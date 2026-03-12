@@ -237,7 +237,7 @@ export const WorkoutTable = ({
                         </div>
                       </ScrollArea>
                     </TableCell>
-                    <TableCell>{workout.duration ? `${workout.duration} min` : 'N/A'}</TableCell>
+                    <TableCell>{(workout.duration || workout.duration_minutes) ? `${workout.duration || workout.duration_minutes} min` : 'N/A'}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
                         <Button 

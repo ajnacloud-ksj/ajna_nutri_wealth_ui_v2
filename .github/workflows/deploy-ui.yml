@@ -31,8 +31,8 @@ jobs:
       node-version: '20'
       
       # Backend API URL (injected as VITE_API_URL during build)
-      # Backend API URL (hardcoded per user request)
-      api-url: 'https://msitjd6d5voovsgvxlxvkcbe3u0viaiw.lambda-url.ap-south-1.on.aws/'
+      # Backend API URL (API Gateway with custom domain)
+      api-url: 'https://smartlink.ajna.cloud/aro'
 
       # Auth mode: 'local' or 'cognito'
       auth-mode: 'cognito'

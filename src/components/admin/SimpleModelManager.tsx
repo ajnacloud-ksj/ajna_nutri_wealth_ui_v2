@@ -3,85 +3,53 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Settings, CheckCircle } from "lucide-react";
+import { RefreshCw, Settings, Bot, Mic, ShoppingCart, UtensilsCrossed, Receipt, Dumbbell, Brain } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
-interface Model {
-  id: string;
-  name: string;
+interface ModelConfig {
   provider: string;
-  model_id: string;
-  is_active: boolean;
-  is_default: boolean;
-  input_cost_per_1k_tokens: number;
-  output_cost_per_1k_tokens: number;
+  model: string;
+  temperature: number;
+  max_tokens: number;
+  timeout: number;
+  cost_per_1k: number;
+  fallback_provider: string | null;
+  fallback_model: string | null;
 }
 
+const USE_CASE_META: Record<string, { label: string; icon: any; color: string }> = {
+  classifier: { label: "Classifier", icon: Brain, color: "bg-purple-100 text-purple-700" },
+  food: { label: "Food Analysis", icon: UtensilsCrossed, color: "bg-green-100 text-green-700" },
+  receipt: { label: "Receipt Analysis", icon: Receipt, color: "bg-blue-100 text-blue-700" },
+  workout: { label: "Workout Analysis", icon: Dumbbell, color: "bg-orange-100 text-orange-700" },
+  shopping: { label: "Shopping Lists", icon: ShoppingCart, color: "bg-amber-100 text-amber-700" },
+  voice_stt: { label: "Voice STT", icon: Mic, color: "bg-red-100 text-red-700" },
+  voice_tts: { label: "Voice TTS", icon: Mic, color: "bg-pink-100 text-pink-700" },
+};
+
 const SimpleModelManager = () => {
-  const [models, setModels] = useState<Model[]>([]);
+  const [configs, setConfigs] = useState<Record<string, ModelConfig>>({});
+  const [providers, setProviders] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadModels();
+    loadConfigs();
   }, []);
 
-  const loadModels = async () => {
+  const loadConfigs = async () => {
     try {
       setLoading(true);
-      const { data, error } = await backendApi
-        .from('models')
-        .select('*')
-        .order('name');
+      const { data, error } = await backendApi.get('/v1/models/config');
 
       if (error) throw error;
-      setModels(data || []);
+      setConfigs(data?.configs || {});
+      setProviders(data?.available_providers || []);
     } catch (error) {
-      console.error('Failed to load models:', error);
-      toast.error('Failed to load models');
+      console.error('Failed to load model configs:', error);
+      toast.error('Failed to load model configs');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const setDefaultModel = async (modelId: string) => {
-    try {
-      // First, set all models to not default
-      await backendApi
-        .from('models')
-        .update({ is_default: false })
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Update all
-
-      // Then set the selected model as default
-      const { error } = await backendApi
-        .from('models')
-        .update({ is_default: true })
-        .eq('id', modelId);
-
-      if (error) throw error;
-
-      await loadModels();
-      toast.success('Default model updated successfully');
-    } catch (error) {
-      console.error('Failed to set default model:', error);
-      toast.error('Failed to update default model');
-    }
-  };
-
-  const toggleModelStatus = async (modelId: string, isActive: boolean) => {
-    try {
-      const { error } = await backendApi
-        .from('models')
-        .update({ is_active: !isActive })
-        .eq('id', modelId);
-
-      if (error) throw error;
-
-      await loadModels();
-      toast.success(`Model ${!isActive ? 'enabled' : 'disabled'} successfully`);
-    } catch (error) {
-      console.error('Failed to toggle model status:', error);
-      toast.error('Failed to update model status');
     }
   };
 
@@ -90,84 +58,78 @@ const SimpleModelManager = () => {
       <Card>
         <CardContent className="flex items-center justify-center p-6">
           <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-          Loading models...
+          Loading model configs...
         </CardContent>
       </Card>
     );
   }
+
+  const useCases = Object.keys(configs);
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>AI Model Management</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5" />
+              AI Model Configuration
+            </CardTitle>
             <CardDescription>
-              Manage available AI models. Both free and pro users use the same model.
+              {useCases.length} use cases configured across {providers.length} providers
             </CardDescription>
           </div>
-          <Button onClick={loadModels} variant="ghost" size="sm">
+          <Button onClick={loadConfigs} variant="ghost" size="sm">
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {models.map((model) => (
-          <div key={model.id} className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-medium">{model.name}</h3>
-                {model.is_default && (
-                  <Badge variant="default" className="text-xs">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Default
+      <CardContent className="space-y-3">
+        {useCases.map((useCase) => {
+          const config = configs[useCase];
+          const meta = USE_CASE_META[useCase] || { label: useCase, icon: Bot, color: "bg-gray-100 text-gray-700" };
+          const Icon = meta.icon;
+
+          return (
+            <div key={useCase} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className={`p-2 rounded-md ${meta.color}`}>
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-sm">{meta.label}</span>
+                    <Badge variant="outline" className="text-xs font-mono">
+                      {config.provider}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground font-mono truncate">
+                    {config.model}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 text-xs text-muted-foreground shrink-0">
+                {config.max_tokens > 0 && (
+                  <span title="Max tokens">{config.max_tokens} tok</span>
+                )}
+                <span title="Timeout">{config.timeout}s</span>
+                {config.fallback_provider && (
+                  <Badge variant="secondary" className="text-xs">
+                    fallback: {config.fallback_provider}/{config.fallback_model}
                   </Badge>
                 )}
-                <Badge variant={model.is_active ? "default" : "secondary"} className="text-xs">
-                  {model.is_active ? "Active" : "Inactive"}
-                </Badge>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {model.provider} • {model.model_id}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Input: ${model.input_cost_per_1k_tokens.toFixed(6)}/1K • 
-                Output: ${model.output_cost_per_1k_tokens.toFixed(6)}/1K
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => toggleModelStatus(model.id, model.is_active)}
-                variant="outline"
-                size="sm"
-              >
-                {model.is_active ? "Disable" : "Enable"}
-              </Button>
-              {model.is_active && !model.is_default && (
-                <Button
-                  onClick={() => setDefaultModel(model.id)}
-                  variant="default"
-                  size="sm"
-                >
-                  Set Default
-                </Button>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
 
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+        <div className="mt-4 p-3 bg-muted/50 rounded-lg">
           <div className="flex items-start gap-3">
-            <Settings className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-blue-900 mb-1">Usage Limits</h4>
-              <p className="text-sm text-blue-700">
-                Both free and pro users use the same AI model. The difference is in usage limits:
-              </p>
-              <ul className="text-sm text-blue-700 mt-2 space-y-1">
-                <li>• <strong>Free users:</strong> 2 analyses per day</li>
-                <li>• <strong>Pro users:</strong> Unlimited analyses</li>
-              </ul>
+            <Settings className="h-4 w-4 text-muted-foreground mt-0.5" />
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p><strong>Providers:</strong> {providers.join(", ")}</p>
+              <p>Model configs are stored in <code className="bg-muted px-1 rounded">app_ai_model_config</code> and can be updated via <code className="bg-muted px-1 rounded">PUT /v1/models/config/{'<use_case>'}</code></p>
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminUserTable from "./AdminUserTable";
 import CostAnalytics from "./CostAnalytics";
 import PromptManager from "./PromptManager";
-import ModelManager from "./ModelManager";
+import SimpleModelManager from "./SimpleModelManager";
 import { Users, DollarSign, MessageSquare, Settings } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -43,7 +43,7 @@ const AdminDashboard = () => {
         </TabsContent>
 
         <TabsContent value="models">
-          <ModelManager />
+          <SimpleModelManager />
         </TabsContent>
       </Tabs>
     </div>

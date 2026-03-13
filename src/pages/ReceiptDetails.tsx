@@ -29,6 +29,7 @@ import {
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
+import { ImageModal } from "@/components/ui/image-modal";
 
 // NOTE: Local ReceiptItem and ReceiptData interfaces kept due to extended fields
 // ReceiptDetails page uses more detailed schema (description, sku, discount, subcategory, department, is_taxable)
@@ -365,8 +366,23 @@ const ReceiptDetails = () => {
           </div>
         </div>
 
-        {/* Summary Cards Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* Receipt Image + Summary Cards */}
+        <div className={`grid gap-6 ${resolvedImageUrl ? 'grid-cols-1 lg:grid-cols-[280px_1fr]' : ''}`}>
+          {/* Receipt Image Thumbnail */}
+          {resolvedImageUrl && (
+            <Card className="border-green-200/50 shadow-sm overflow-hidden">
+              <CardContent className="p-0">
+                <ImageModal
+                  src={receipt.image_url!}
+                  alt="Receipt"
+                  className="w-full h-full min-h-[200px] max-h-[280px]"
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 content-start">
           <SummaryCard
             icon={<DollarSign className="h-5 w-5 text-green-600" />}
             label="Total"
@@ -410,6 +426,7 @@ const ReceiptDetails = () => {
             label="Payment"
             value={receipt.payment_method || "N/A"}
           />
+          </div>
         </div>
 
         {/* Items Table */}
@@ -560,21 +577,6 @@ const ReceiptDetails = () => {
               </Card>
             )}
 
-            {/* Receipt Image */}
-            {resolvedImageUrl && (
-              <Card className="border-green-200/50 shadow-sm">
-                <CardHeader className="border-b border-green-100/50 bg-gradient-to-r from-green-50/50 to-white pb-4">
-                  <CardTitle className="text-lg text-green-700">Receipt Image</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <img
-                    src={resolvedImageUrl}
-                    alt="Receipt"
-                    className="w-full rounded-lg shadow-sm border"
-                  />
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </div>

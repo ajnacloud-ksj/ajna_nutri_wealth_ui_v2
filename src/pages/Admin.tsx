@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
@@ -40,7 +40,7 @@ const Admin = () => {
       }
 
       // Check user's admin status from database
-      const { data: userData } = await api
+      const { data: userData } = await backendApi
         .from('app_users')
         .select('role')
         .eq('id', user.id)
@@ -51,7 +51,7 @@ const Admin = () => {
         console.log(`Admin access granted for ${user.email}`);
       } else {
         // Try by email if ID doesn't match
-        const { data: userByEmail } = await api
+        const { data: userByEmail } = await backendApi
           .from('app_users')
           .select('role')
           .eq('email', user.email || user.user_metadata?.email || 'sbpraonalla@gmail.com')

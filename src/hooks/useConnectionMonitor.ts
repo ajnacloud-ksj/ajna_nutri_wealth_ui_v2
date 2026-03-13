@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '@/lib/api';
+import { backendApi } from '@/lib/api/client';
 
 export const useConnectionMonitor = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -24,7 +24,7 @@ export const useConnectionMonitor = () => {
   const testConnection = useCallback(async () => {
     try {
       // Simple ping to check if we can query users
-      const { data, error } = await api.from('users').select();
+      const { data, error } = await backendApi.from('users').select();
       const connected = !error;
       setSupabaseConnected(connected);
       if (connected) {

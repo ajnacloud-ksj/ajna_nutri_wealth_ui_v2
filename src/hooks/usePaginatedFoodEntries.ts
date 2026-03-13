@@ -1,22 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '@/lib/api';
+import { backendApi } from '@/lib/api/client';
 import { toast } from 'sonner';
-
-interface FoodEntry {
-  id: string;
-  description: string;
-  calories: number;
-  total_protein: number;
-  total_carbohydrates: number;
-  total_fats: number;
-  total_fiber: number;
-  total_sodium: number;
-  meal_type: string;
-  image_url: string;
-  created_at: string;
-  extracted_nutrients: any;
-  user_id: string;
-}
+import { FoodEntry } from '@/types/food';
 
 interface PaginationState {
   page: number;
@@ -50,7 +35,7 @@ export const usePaginatedFoodEntries = (userId: string | undefined) => {
       const offset = (page - 1) * pagination.limit;
 
       // Fetch with pagination
-      const { data: entriesData } = await api.from('food_entries')
+      const { data: entriesData } = await backendApi.from('food_entries')
         .select()
         .eq('user_id', userId)
         .order('created_at', { ascending: false })

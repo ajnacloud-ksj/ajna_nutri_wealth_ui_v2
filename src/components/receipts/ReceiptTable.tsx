@@ -11,22 +11,9 @@ import { format } from "date-fns";
 import { Calendar as CalendarDate } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 import { useAuth } from "@/contexts/AuthContext";
-
-interface ReceiptEntry {
-  id: string;
-  vendor: string;
-  receipt_date: string;
-  total_amount: number;
-  items: any;
-  image_url: string;
-  tags: string[];
-  created_at: string;
-  user_id: string;
-  description?: string;
-  category?: string;
-}
+import { ReceiptEntry } from "@/types/receipt";
 
 interface ReceiptTableProps {
   participantId?: string;
@@ -62,7 +49,7 @@ export const ReceiptTable = ({
 
       // Use the specific receipts endpoint
       // The backend automatically filters by the authenticated user
-      const response = await api.get('/v1/receipts');
+      const response = await backendApi.get('/v1/receipts');
 
       const allReceipts = response.data?.receipts || [];
 

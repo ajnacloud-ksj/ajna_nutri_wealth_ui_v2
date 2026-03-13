@@ -18,20 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-interface ReceiptEntry {
-  id: string;
-  vendor: string;
-  receipt_date: string;
-  total_amount: number;
-  items: any;
-  image_url: string;
-  tags: string[];
-  created_at: string;
-  user_id: string;
-  description?: string;
-  category?: string;
-}
+import { ReceiptEntry } from "@/types/receipt";
 
 const Receipts = () => {
   const navigate = useNavigate();

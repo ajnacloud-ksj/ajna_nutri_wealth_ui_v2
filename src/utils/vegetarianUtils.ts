@@ -1,3 +1,4 @@
+import { FoodEntry } from '@/types/food';
 
 interface FoodItem {
   name: string;
@@ -8,11 +9,6 @@ interface FoodItem {
     vegetarian?: boolean;
     vegan?: boolean;
   };
-}
-
-interface FoodEntry {
-  extracted_nutrients?: any; // Can be string or object
-  calories?: number;
 }
 
 export interface DietaryBreakdown {

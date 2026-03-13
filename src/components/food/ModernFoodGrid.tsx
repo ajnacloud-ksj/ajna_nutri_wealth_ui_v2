@@ -7,21 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Utensils, Clock, Eye, Trash2, Zap, Leaf } from "lucide-react";
 import { format } from 'date-fns';
 import { calculateVegetarianPercentage } from "@/utils/vegetarianUtils";
-
-interface FoodEntry {
-  id: string;
-  created_at: string;
-  description?: string;
-  user_id: string;
-  meal_type?: string;
-  total_protein?: number;
-  total_carbohydrates?: number;
-  total_fats?: number;
-  calories?: number;
-  image_url?: string;
-  extracted_nutrients?: any;
-  food_items: any[];
-}
+import { FoodEntry } from "@/types/food";
 
 interface ModernFoodGridProps {
   entries: FoodEntry[];

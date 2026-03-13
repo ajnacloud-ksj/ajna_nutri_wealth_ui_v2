@@ -110,7 +110,7 @@ const Auth = () => {
         // Handle invitation code if present
         if (invitationCode && data?.user?.id) {
           try {
-            await api.functions.invoke('redeem-invitation', {
+            await backendApi.functions.invoke('redeem-invitation', {
               body: {
                 invitationCode,
                 userId: data.user.id

@@ -7,30 +7,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Edit, Save, X, Utensils, Flame, Calendar, Clock, Apple, ChevronDown, ChevronUp } from "lucide-react";
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { ImageModal } from "@/components/ui/image-modal";
 import { HealthImpact } from "@/components/food/HealthImpact";
+import { FoodEntry } from "@/types/food";
 
-interface FoodEntry {
-  id: string;
-  description: string;
-  calories: number;
-  total_protein: number;
-  total_carbohydrates: number;
-  total_fats: number;
-  total_fiber: number;
-  total_sodium: number;
-  meal_type: string;
-  meal_time: string;
-  meal_date: string;
-  confidence_score: number;
-  image_url: string;
-  created_at: string;
-  extracted_nutrients: any;
-}
+// Note: Local interface has extra fields (meal_time, meal_date, confidence_score) not in shared type
 
 const FoodDetails = () => {
   const { id } = useParams();
@@ -57,7 +42,7 @@ const FoodDetails = () => {
 
     try {
       // Fetch specific entry by ID - much more efficient!
-      const { data: entries } = await api.from('food_entries')
+      const { data: entries } = await backendApi.from('food_entries')
         .select()
         .eq('id', id)
         .eq('user_id', user.id)
@@ -99,7 +84,7 @@ const FoodDetails = () => {
 
   const handleSave = async () => {
     try {
-      const { error } = await api
+      const { error } = await backendApi
         .from('food_entries')
         .update(editedData)
         .eq('id', id);

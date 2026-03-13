@@ -66,7 +66,7 @@ const Billing = () => {
 
   const checkSubscription = async () => {
     try {
-      const { data, error } = await api.functions.invoke('check-subscription', {
+      const { data, error } = await backendApi.functions.invoke('check-subscription', {
         headers: {
           // Authorization handled by api client if token is set
         },
@@ -84,7 +84,7 @@ const Billing = () => {
   const handleUpgrade = async (priceId?: string) => {
     try {
       setUpgradeLoading(true);
-      const { data, error } = await api.functions.invoke('create-checkout', {
+      const { data, error } = await backendApi.functions.invoke('create-checkout', {
         body: { priceId },
         headers: {
           // Authorization handled by api client
@@ -106,7 +106,7 @@ const Billing = () => {
   const handleManageSubscription = async () => {
     try {
       setPortalLoading(true);
-      const { data, error } = await api.functions.invoke('customer-portal', {
+      const { data, error } = await backendApi.functions.invoke('customer-portal', {
         headers: {
           // Authorization handled by api client
         },

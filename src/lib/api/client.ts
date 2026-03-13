@@ -509,11 +509,20 @@ class BackendApiClient {
         const self = this;
         return {
           eq: async function (column: string, value: any) {
-            // Mock delete
-            const existing = JSON.parse(localStorage.getItem(`mock_table_${self._table}`) || '[]');
-            const filtered = existing.filter((item: any) => item[column] !== value);
-            localStorage.setItem(`mock_table_${self._table}`, JSON.stringify(filtered));
-            return { data: null, error: null };
+            try {
+              const url = `${API_BASE_URL}/v1/${self._table}/${value}`;
+              const response = await fetch(url, {
+                method: 'DELETE',
+                headers: getAuthHeaders(),
+              });
+              if (!response.ok) {
+                throw new Error(`Delete failed: HTTP ${response.status}`);
+              }
+              return { data: null, error: null };
+            } catch (error) {
+              console.error(`[API] Error deleting from ${self._table}:`, error);
+              return { data: null, error: error as Error };
+            }
           },
         };
       },
@@ -617,44 +626,16 @@ class BackendApiClient {
           const queryString = params.toString();
           const url = `${API_BASE_URL}/v1/${this._table}${queryString ? `?${queryString}` : ''}`;
 
-          console.log(`[API] Fetching from: ${url}`);
-          console.log(`[API] Headers:`, getAuthHeaders());
-
           const response = await fetch(url, {
             headers: getAuthHeaders()
           });
-
-          console.log(`[API] Response status: ${response.status}`);
 
           if (!response.ok) {
             const errorText = await response.text();
             console.error(`[API] Error response body:`, errorText);
 
             if (response.status === 404) {
-              console.log(`[API] 404 - Table ${this._table} not found, checking localStorage fallback`);
-              // Table doesn't exist in backend, use localStorage fallback
-              let data = JSON.parse(localStorage.getItem(`mock_table_${this._table}`) || '[]');
-
-              // Apply filters
-              for (const filter of this._filters) {
-                if (filter.operator === 'eq') {
-                  data = data.filter((item: any) => item[filter.column] === filter.value);
-                } else if (filter.operator === 'is') {
-                  if (filter.value === null) {
-                    data = data.filter((item: any) => item[filter.column] === null || item[filter.column] === undefined);
-                  } else {
-                    data = data.filter((item: any) => item[filter.column] === filter.value);
-                  }
-                }
-              }
-
-              // Apply limit
-              if (this._limitCount !== null) {
-                data = data.slice(0, this._limitCount);
-              }
-
-              console.log(`[API] Returning ${data.length} items from localStorage`);
-              return { data, error: null };
+              return { data: [], error: null };
             }
 
             // Try to parse error as JSON

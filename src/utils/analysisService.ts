@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 
 // Type definitions for better type safety
 interface InsertResponse {
@@ -94,7 +94,7 @@ export const insertAnalysisResult = async (userId: string, category: string, ana
 
         console.log('Inserting food entry with description:', meaningfulDescription);
 
-        const { data, error } = await api
+        const { data, error } = await backendApi
           .from('food_entries')
           .insert(foodData)
         //.select('id') // API insert returns data
@@ -123,7 +123,7 @@ export const insertAnalysisResult = async (userId: string, category: string, ana
           items: analysis,
         };
 
-        const { data, error } = await api
+        const { data, error } = await backendApi
           .from('app_receipts')
           .insert(receiptData)
         //.select('id')
@@ -156,7 +156,7 @@ export const insertAnalysisResult = async (userId: string, category: string, ana
           notes: JSON.stringify(analysis),
         };
 
-        const { data, error } = await api
+        const { data, error } = await backendApi
           .from('workouts')
           .insert(workoutData)
         //.select('id')

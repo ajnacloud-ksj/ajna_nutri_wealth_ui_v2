@@ -1,5 +1,5 @@
 
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 
 export interface PendingAnalysis {
   id: string;
@@ -27,7 +27,7 @@ export const createPendingAnalysis = async (
 
   const id = crypto.randomUUID();
 
-  await api.from('pending_analyses').insert({
+  await backendApi.from('pending_analyses').insert({
     id,
     user_id: userId,
     description,
@@ -62,7 +62,7 @@ export const updateAnalysisStatus = async (
   }
 
   // Fetch existing first to merge (Generic API limitation)
-  const { data: existingList } = await api.from('pending_analyses').select();
+  const { data: existingList } = await backendApi.from('pending_analyses').select();
   const existing = existingList?.find((a: any) => a.id === id);
 
   if (!existing) throw new Error("Analysis not found");
@@ -72,7 +72,7 @@ export const updateAnalysisStatus = async (
     ...updateData
   };
 
-  const { error } = await api.from('pending_analyses').insert(finalUpdate);
+  const { error } = await backendApi.from('pending_analyses').insert(finalUpdate);
 
   if (error) {
     console.error('Failed to update analysis status:', error);
@@ -81,7 +81,7 @@ export const updateAnalysisStatus = async (
 };
 
 export const getPendingAnalyses = async (userId: string): Promise<PendingAnalysis[]> => {
-  const { data, error } = await api.from('pending_analyses').select();
+  const { data, error } = await backendApi.from('pending_analyses').select();
 
   if (data) {
     const filtered = data.filter((a: any) => a.user_id === userId);
@@ -99,7 +99,7 @@ export const getPendingAnalyses = async (userId: string): Promise<PendingAnalysi
 
 export const retryFailedAnalysis = async (id: string) => {
   // First get the current retry count
-  const { data: allAnalyses } = await api.from('pending_analyses').select();
+  const { data: allAnalyses } = await backendApi.from('pending_analyses').select();
   const currentData = allAnalyses?.find((a: any) => a.id === id);
 
   if (!allAnalyses) {
@@ -118,7 +118,7 @@ export const retryFailedAnalysis = async (id: string) => {
     updated_at: new Date().toISOString()
   };
 
-  const { error } = await api.from('pending_analyses').insert(updatedRecord);
+  const { error } = await backendApi.from('pending_analyses').insert(updatedRecord);
 
   if (error) {
     console.error('Failed to retry analysis:', error);
@@ -131,7 +131,7 @@ export const cleanupInconsistentAnalyses = async (userId: string) => {
   console.log('Cleaning up inconsistent analyses for user:', userId);
 
   // Find analyses that have completed_at but are still in pending status
-  const { data: allAnalyses } = await api.from('pending_analyses').select();
+  const { data: allAnalyses } = await backendApi.from('pending_analyses').select();
   const inconsistentAnalyses = allAnalyses?.filter((a: any) =>
     a.user_id === userId &&
     a.status === 'pending' &&
@@ -149,7 +149,7 @@ export const cleanupInconsistentAnalyses = async (userId: string) => {
     // Update these to completed status
     // Update loop
     for (const analysis of inconsistentAnalyses) {
-      await api.from('pending_analyses').insert({
+      await backendApi.from('pending_analyses').insert({
         ...analysis,
         status: 'completed',
         updated_at: new Date().toISOString()

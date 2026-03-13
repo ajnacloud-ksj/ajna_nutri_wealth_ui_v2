@@ -3,23 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Flame, Droplets, Wheat, Apple, TrendingUp, Leaf } from "lucide-react";
-
-interface FoodEntry {
-  id: string;
-  description: string;
-  calories: number;
-  total_protein: number;
-  total_carbohydrates: number;
-  total_fats: number;
-  total_fiber: number;
-  total_sodium: number;
-  meal_type: string;
-  image_url: string;
-  created_at: string;
-  extracted_nutrients: any;
-  user_id: string;
-  food_items: any[];
-}
+import { FoodEntry } from "@/types/food";
 
 interface EnhancedNutritionDisplayProps {
   entry: FoodEntry;

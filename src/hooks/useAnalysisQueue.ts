@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '@/lib/api';
+import { backendApi } from '@/lib/api/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -41,7 +41,7 @@ export const useAnalysisQueue = () => {
       const estimatedCompletion = new Date();
       estimatedCompletion.setMinutes(estimatedCompletion.getMinutes() + 2);
 
-      await api.post('/v1/pending_analyses', {
+      await backendApi.post('/v1/pending_analyses', {
         id: analysisId,
         user_id: user.id,
         description: description || 'AI-analyzed content',
@@ -54,7 +54,7 @@ export const useAnalysisQueue = () => {
       });
 
       // Process analysis in background (don't await)
-      api.post('/v1/analyze', {
+      backendApi.post('/v1/analyze', {
         category: 'food',
         description,
         image_url: imageUrl,

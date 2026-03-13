@@ -1,17 +1,4 @@
-
-interface ReceiptEntry {
-  id: string;
-  vendor: string;
-  receipt_date: string;
-  total_amount: number;
-  items: any;
-  image_url: string;
-  tags: string[];
-  created_at: string;
-  user_id: string;
-  description?: string;
-  category?: string;
-}
+import { ReceiptEntry } from "@/types/receipt";
 
 export const filterReceipts = (receipts: ReceiptEntry[], filters: any) => {
   return receipts.filter(receipt => {

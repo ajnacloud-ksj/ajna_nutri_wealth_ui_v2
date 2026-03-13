@@ -25,10 +25,13 @@ import {
   Percent,
   Package,
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 
+// NOTE: Local ReceiptItem and ReceiptData interfaces kept due to extended fields
+// ReceiptDetails page uses more detailed schema (description, sku, discount, subcategory, department, is_taxable)
+// vs shared type which has minimal fields for list views
 interface ReceiptItem {
   id: string;
   name: string;
@@ -87,7 +90,7 @@ const ReceiptDetails = () => {
 
   const fetchReceipt = async () => {
     try {
-      const response = await api.get(`/v1/receipts/${id}`);
+      const response = await backendApi.get(`/v1/receipts/${id}`);
       if (!response.data) throw new Error("Receipt not found");
 
       const r = response.data;
@@ -115,7 +118,7 @@ const ReceiptDetails = () => {
 
   const handleSave = async () => {
     try {
-      await api.put(`/v1/app_receipts/${id}`, editedData);
+      await backendApi.put(`/v1/app_receipts/${id}`, editedData);
       setReceipt({ ...receipt!, ...editedData });
       setEditing(false);
       toast.success("Receipt updated successfully");

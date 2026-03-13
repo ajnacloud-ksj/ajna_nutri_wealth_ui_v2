@@ -3,17 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Trash2, DollarSign, Calendar, Store, ShoppingCart, FileText } from "lucide-react";
-
-interface ReceiptEntry {
-  id: string;
-  vendor: string;
-  receipt_date: string;
-  total_amount: number;
-  items: any;
-  image_url: string;
-  tags: string[];
-  created_at: string;
-}
+import { ReceiptEntry } from "@/types/receipt";
 
 interface ModernReceiptCardProps {
   receipt: ReceiptEntry;

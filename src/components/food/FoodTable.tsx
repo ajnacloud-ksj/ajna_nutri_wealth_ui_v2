@@ -24,21 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-interface FoodEntry {
-  id: string;
-  created_at: string;
-  description?: string;
-  user_id: string;
-  meal_type?: string;
-  total_protein?: number;
-  total_carbohydrates?: number;
-  total_fats?: number;
-  calories?: number;
-  image_url?: string;
-  extracted_nutrients?: any;
-  food_items: FoodItem[];
-}
+import { FoodEntry } from "@/types/food";
 
 interface FoodItem {
   id: string;

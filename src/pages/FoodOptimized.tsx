@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, Utensils, LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
 import { optimizedApi } from "@/lib/api/optimized-client";
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
@@ -17,23 +17,7 @@ import { calculateVegetarianPercentage } from "@/utils/vegetarianUtils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent } from "@/components/ui/card";
 import { debounce } from "@/utils/performance";
-
-interface FoodEntry {
-  id: string;
-  description: string;
-  calories: number;
-  total_protein: number;
-  total_carbohydrates: number;
-  total_fats: number;
-  total_fiber: number;
-  total_sodium: number;
-  meal_type: string;
-  image_url: string;
-  created_at: string;
-  extracted_nutrients: any;
-  user_id: string;
-  food_items: any[];
-}
+import { FoodEntry } from "@/types/food";
 
 const PAGE_SIZE = 20; // Optimized page size for performance
 
@@ -254,7 +238,7 @@ const FoodOptimized = () => {
 
   const deleteFoodEntry = async (id: string) => {
     try {
-      const { error } = await api.from('food_entries').delete().eq('id', id);
+      const { error } = await backendApi.from('food_entries').delete().eq('id', id);
 
       if (error) throw error;
 

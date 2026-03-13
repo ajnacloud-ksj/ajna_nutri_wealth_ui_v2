@@ -46,7 +46,6 @@
     "@tanstack/react-table": "^8.21.3",
     "@types/react-window": "^1.8.8",
     "aws-amplify": "^6.0.0",
-    "axios": "^1.6.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",

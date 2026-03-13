@@ -45,6 +45,8 @@ interface PermissionInfo {
   is_granted: boolean;
 }
 
+// Note: This FoodEntry interface is specific to CaretakerParticipantView and differs from @/types/food
+// It uses different field names (food_name vs description, protein vs total_protein, etc.)
 interface FoodEntry {
   id: string;
   food_name: string;
@@ -66,6 +68,8 @@ interface Workout {
   created_at: string;
 }
 
+// NOTE: Local ReceiptEntry definition kept due to different field structure (store_name, items_count)
+// This is specific to the caretaker view API response format
 interface ReceiptEntry {
   id: string;
   store_name: string;

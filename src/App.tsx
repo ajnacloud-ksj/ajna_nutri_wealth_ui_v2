@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { initializeLocalAuth } from "@/config/local";
@@ -14,31 +15,32 @@ import PWAUpdateManager from "@/components/pwa/PWAUpdateManager";
 import EnhancedPWAInstallPrompt from "@/components/pwa/EnhancedPWAInstallPrompt";
 import NotificationPanel from "@/components/notifications/NotificationPanel";
 import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
+import { Loader2 } from "lucide-react";
 
-// Pages
+// Eager-loaded pages (primary navigation)
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import SimplifiedIndex from "./pages/SimplifiedIndex";
 import Food from "./pages/Food";
-import FoodDetails from "./pages/FoodDetails";
 import Workouts from "./pages/Workouts";
-import WorkoutDetails from "./pages/WorkoutDetails";
 import Receipts from "./pages/Receipts";
-import ReceiptDetails from "./pages/ReceiptDetails";
-import Pricing from "./pages/Pricing";
 import Capture from "./pages/Capture";
-import Queue from "./pages/Queue";
-import Admin from "./pages/Admin";
-import Insights from "./pages/Insights";
-import Billing from "./pages/Billing";
-import Reconciliation from "./pages/Reconciliation";
 import NotFound from "./pages/NotFound";
+
+// Lazy-loaded pages (detail views, heavy charts, admin)
+const FoodDetails = lazy(() => import("./pages/FoodDetails"));
+const WorkoutDetails = lazy(() => import("./pages/WorkoutDetails"));
+const ReceiptDetails = lazy(() => import("./pages/ReceiptDetails"));
+const Insights = lazy(() => import("./pages/Insights"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Billing = lazy(() => import("./pages/Billing"));
+const Reconciliation = lazy(() => import("./pages/Reconciliation"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Queue = lazy(() => import("./pages/Queue"));
 
 // Route components
 import PublicRoute from "./components/routes/PublicRoute";
 import PrivateRoute from "./components/routes/PrivateRoute";
-
-const queryClient = new QueryClient();
 
 function App() {
   // Initialize local auth on app start
@@ -65,6 +67,7 @@ function App() {
                       <NotificationPanel />
                     </div>
 
+                    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}>
                     <Routes>
                       {/* Public Routes */}
                       <Route path="/" element={<PublicRoute><SimplifiedIndex /></PublicRoute>} />
@@ -99,6 +102,7 @@ function App() {
                       {/* 404 Catch-all route */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
+                    </Suspense>
                   </div>
                   <Toaster />
                   <ShadcnToaster />

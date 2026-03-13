@@ -1,5 +1,5 @@
 
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 
 export const cleanupStuckAnalyses = async (userId: string) => {
   const oneHourAgo = new Date();
@@ -9,7 +9,7 @@ export const cleanupStuckAnalyses = async (userId: string) => {
 
   try {
     // Find analyses that have been pending for over 1 hour
-    const { data: allAnalyses } = await api.from('pending_analyses').select();
+    const { data: allAnalyses } = await backendApi.from('pending_analyses').select();
 
     // Manual Filter
     const stuckAnalyses = allAnalyses?.filter((a: any) =>
@@ -27,7 +27,7 @@ export const cleanupStuckAnalyses = async (userId: string) => {
 
     // Mark them as failed
     for (const analysis of stuckAnalyses) {
-      await api.from('pending_analyses').insert({
+      await backendApi.from('pending_analyses').insert({
         ...analysis,
         status: 'failed',
         error_message: 'Analysis timed out after 1 hour',

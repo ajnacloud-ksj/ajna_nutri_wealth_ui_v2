@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { api } from "@/lib/api";
+import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import { UserUsageData, UserMetrics } from "@/types/userAnalytics";
 
@@ -30,7 +30,7 @@ export const useOptimizedUserAnalytics = () => {
       console.log('Step 1: Fetching all users...');
       // Step 1: Get ALL users first
       console.log('Step 1: Fetching all users...');
-      const { data: usersWithMetrics, error: usersError } = await api.from('users').select();
+      const { data: usersWithMetrics, error: usersError } = await backendApi.from('users').select();
 
       if (usersWithMetrics) {
         usersWithMetrics.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -64,7 +64,7 @@ export const useOptimizedUserAnalytics = () => {
       console.log('Step 2: Fetching analysis data...');
       // Step 2: Get analysis data for all users
       console.log('Step 2: Fetching analysis data...');
-      const { data: rawAnalysisData, error: analysisError } = await api.from('api_costs').select();
+      const { data: rawAnalysisData, error: analysisError } = await backendApi.from('api_costs').select();
 
       const analysisData = rawAnalysisData ? rawAnalysisData.filter((a: any) => userIds.includes(a.user_id)) : [];
 
@@ -78,7 +78,7 @@ export const useOptimizedUserAnalytics = () => {
       console.log('Step 3: Fetching billing data...');
       // Step 3: Get billing data
       console.log('Step 3: Fetching billing data...');
-      const { data: rawBillingData, error: billingError } = await api.from('api_usage_log').select();
+      const { data: rawBillingData, error: billingError } = await backendApi.from('api_usage_log').select();
 
       const billingData = rawBillingData ? rawBillingData.filter((b: any) => userIds.includes(b.user_id)) : [];
 

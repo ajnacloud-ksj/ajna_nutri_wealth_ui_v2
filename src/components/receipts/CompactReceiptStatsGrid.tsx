@@ -1,17 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Receipt, DollarSign, Calendar, TrendingUp } from "lucide-react";
-
-interface ReceiptEntry {
-  id: string;
-  vendor: string;
-  receipt_date: string;
-  total_amount: number;
-  items: any;
-  image_url: string;
-  tags: string[];
-  created_at: string;
-}
+import { ReceiptEntry } from "@/types/receipt";
 
 interface CompactReceiptStatsGridProps {
   receipts: ReceiptEntry[];

@@ -5,21 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Eye, Trash2, Flame, Calendar, Utensils } from "lucide-react";
 import { calculateDetailedDietaryBreakdown, getDietaryDisplayBadges } from "@/utils/vegetarianUtils";
-
-interface FoodEntry {
-  id: string;
-  description: string;
-  calories: number;
-  total_protein: number;
-  total_carbohydrates: number;
-  total_fats: number;
-  total_fiber: number;
-  total_sodium: number;
-  meal_type: string;
-  image_url: string;
-  created_at: string;
-  extracted_nutrients: any;
-}
+import { FoodEntry } from "@/types/food";
 
 interface FoodCardProps {
   entry: FoodEntry;

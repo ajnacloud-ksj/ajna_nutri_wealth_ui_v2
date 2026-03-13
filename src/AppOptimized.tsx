@@ -52,6 +52,7 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const Billing = lazy(() => import("./pages/Billing"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Reconciliation = lazy(() => import("./pages/Reconciliation"));
+const ShoppingLists = lazy(() => import("./pages/ShoppingLists"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Caretaker pages
@@ -133,6 +134,9 @@ function AppOptimized() {
                         {/* Receipt Scanning */}
                         <Route path="/receipts" element={<PrivateRoute><Receipts /></PrivateRoute>} />
                         <Route path="/receipts/:id" element={<PrivateRoute><ReceiptDetails /></PrivateRoute>} />
+
+                        {/* Shopping Lists */}
+                        <Route path="/shopping" element={<PrivateRoute><ShoppingLists /></PrivateRoute>} />
 
                         {/* Analytics & Settings */}
                         <Route path="/insights" element={<PrivateRoute><Insights /></PrivateRoute>} />

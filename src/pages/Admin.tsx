@@ -41,7 +41,7 @@ const Admin = () => {
 
       // Check user's admin status from database
       const { data: userData } = await api
-        .from('users')
+        .from('app_users')
         .select('role')
         .eq('id', user.id)
         .single();
@@ -52,7 +52,7 @@ const Admin = () => {
       } else {
         // Try by email if ID doesn't match
         const { data: userByEmail } = await api
-          .from('users')
+          .from('app_users')
           .select('role')
           .eq('email', user.email || user.user_metadata?.email || 'sbpraonalla@gmail.com')
           .single();

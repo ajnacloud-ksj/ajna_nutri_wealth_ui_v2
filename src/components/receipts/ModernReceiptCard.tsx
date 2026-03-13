@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Trash2, DollarSign, Calendar, Store, ShoppingCart, FileText } from "lucide-react";
 import { ReceiptEntry } from "@/types/receipt";
+import { ResolvedImg } from "@/components/ui/lazy-image";
 
 interface ModernReceiptCardProps {
   receipt: ReceiptEntry;
@@ -61,7 +62,7 @@ export const ModernReceiptCard = ({ receipt, onView, onDelete }: ModernReceiptCa
           {/* Image or Icon Section */}
           <div className="w-20 h-20 flex-shrink-0 bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
             {receipt.image_url ? (
-              <img
+              <ResolvedImg
                 src={receipt.image_url}
                 alt="Receipt"
                 className="w-full h-full object-cover"

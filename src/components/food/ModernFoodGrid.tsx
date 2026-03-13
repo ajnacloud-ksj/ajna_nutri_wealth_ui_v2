@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Utensils, Clock, Eye, Trash2, Zap, Leaf } from "lucide-react";
 import { format } from 'date-fns';
+import { ResolvedImg } from "@/components/ui/lazy-image";
 import { calculateVegetarianPercentage } from "@/utils/vegetarianUtils";
 import { FoodEntry } from "@/types/food";
 
@@ -99,7 +100,7 @@ export const ModernFoodGrid = ({
             <div className="relative cursor-pointer">
               {entry.image_url && (
                 <div className="aspect-video w-full overflow-hidden bg-gray-100">
-                  <img
+                  <ResolvedImg
                     src={entry.image_url}
                     alt="Food"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"

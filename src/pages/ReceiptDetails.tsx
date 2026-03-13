@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useImageUrl } from "@/hooks/useImageUrl";
 import { useParams, useNavigate } from "react-router-dom";
 import { ColumnDef } from "@tanstack/react-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,6 +84,7 @@ const ReceiptDetails = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editedData, setEditedData] = useState<Partial<ReceiptData>>({});
+  const resolvedImageUrl = useImageUrl(receipt?.image_url);
 
   useEffect(() => {
     if (id) fetchReceipt();
@@ -559,14 +561,14 @@ const ReceiptDetails = () => {
             )}
 
             {/* Receipt Image */}
-            {receipt.image_url && (
+            {resolvedImageUrl && (
               <Card className="border-green-200/50 shadow-sm">
                 <CardHeader className="border-b border-green-100/50 bg-gradient-to-r from-green-50/50 to-white pb-4">
                   <CardTitle className="text-lg text-green-700">Receipt Image</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
                   <img
-                    src={receipt.image_url}
+                    src={resolvedImageUrl}
                     alt="Receipt"
                     className="w-full rounded-lg shadow-sm border"
                   />

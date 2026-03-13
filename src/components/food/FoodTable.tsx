@@ -25,6 +25,19 @@ import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FoodEntry } from "@/types/food";
+import { useImageUrl } from "@/hooks/useImageUrl";
+
+const FoodAvatar = ({ imageUrl }: { imageUrl?: string }) => {
+  const resolved = useImageUrl(imageUrl);
+  return (
+    <Avatar className="h-10 w-10">
+      {resolved && <AvatarImage src={resolved} alt="Food" className="object-cover" />}
+      <AvatarFallback className="bg-orange-100">
+        <Utensils className="h-4 w-4 text-orange-600" />
+      </AvatarFallback>
+    </Avatar>
+  );
+};
 
 interface FoodItem {
   id: string;
@@ -250,14 +263,7 @@ export const FoodTable = ({
                 return (
                   <TableRow key={entry.id}>
                     <TableCell>
-                      <Avatar className="h-10 w-10">
-                        {entry.image_url && (
-                          <AvatarImage src={entry.image_url} alt="Food" className="object-cover" />
-                        )}
-                        <AvatarFallback className="bg-orange-100">
-                          <Utensils className="h-4 w-4 text-orange-600" />
-                        </AvatarFallback>
-                      </Avatar>
+                      <FoodAvatar imageUrl={entry.image_url} />
                     </TableCell>
                     <TableCell className="font-medium">{format(new Date(entry.created_at), 'MMM dd, yyyy')}</TableCell>
                     <TableCell>{entry.description || 'N/A'}</TableCell>

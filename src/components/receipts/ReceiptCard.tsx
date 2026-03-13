@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Trash2, DollarSign, Calendar, Store, ShoppingCart } from "lucide-react";
 import { ReceiptEntry } from "@/types/receipt";
+import { ResolvedImg } from "@/components/ui/lazy-image";
 
 interface ReceiptCardProps {
   receipt: ReceiptEntry;
@@ -62,7 +63,7 @@ export const ReceiptCard = ({ receipt, onView, onDelete }: ReceiptCardProps) => 
           {/* Image Section */}
           {receipt.image_url && (
             <div className="w-full sm:w-24 h-32 sm:h-24 flex-shrink-0">
-              <img
+              <ResolvedImg
                 src={receipt.image_url}
                 alt="Receipt"
                 className="w-full h-full object-cover"

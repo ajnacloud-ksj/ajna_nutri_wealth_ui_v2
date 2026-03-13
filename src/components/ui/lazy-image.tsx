@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { useImageUrl } from '@/hooks/useImageUrl';
 
 interface LazyImageProps {
   src: string;
@@ -22,6 +23,7 @@ export const LazyImage = ({
   threshold = 0.1,
   rootMargin = '50px'
 }: LazyImageProps) => {
+  const resolvedSrc = useImageUrl(src);
   const [isInView, setIsInView] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -102,9 +104,9 @@ export const LazyImage = ({
       )}
 
       {/* Actual image */}
-      {isInView && !hasError && (
+      {isInView && !hasError && resolvedSrc && (
         <img
-          src={src}
+          src={resolvedSrc}
           alt={alt}
           className={cn(
             'transition-opacity duration-300',
@@ -124,3 +126,14 @@ export const LazyImage = ({
 export const LazyThumbnail = (props: Omit<LazyImageProps, 'threshold' | 'rootMargin'>) => {
   return <LazyImage {...props} threshold={0.01} rootMargin="100px" />;
 };
+
+// Simple resolved image for use in loops or with AvatarImage
+export const ResolvedImg = ({ src, alt, className, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => {
+  const resolvedSrc = useImageUrl(src);
+  if (!resolvedSrc) return null;
+  return <img src={resolvedSrc} alt={alt} className={className} {...props} />;
+};
+
+// Hook-free image resolver for use outside React components (e.g. in map callbacks)
+// Use ResolvedImg component instead when possible
+export { useImageUrl } from '@/hooks/useImageUrl';

@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Eye, Trash2, Flame, Calendar, Utensils } from "lucide-react";
 import { calculateDetailedDietaryBreakdown, getDietaryDisplayBadges } from "@/utils/vegetarianUtils";
 import { FoodEntry } from "@/types/food";
+import { useImageUrl } from "@/hooks/useImageUrl";
 
 interface FoodCardProps {
   entry: FoodEntry;
@@ -15,6 +16,7 @@ interface FoodCardProps {
 }
 
 export const FoodCard = ({ entry, onView, onDelete, getMealTypeFromEntry }: FoodCardProps) => {
+  const resolvedImageUrl = useImageUrl(entry.image_url);
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -98,8 +100,8 @@ export const FoodCard = ({ entry, onView, onDelete, getMealTypeFromEntry }: Food
           {/* Image Section */}
           <div className="w-full sm:w-24 h-32 sm:h-24 flex-shrink-0">
             <Avatar className="w-full h-full rounded-none">
-              {entry.image_url && (
-                <AvatarImage src={entry.image_url} alt="Food" className="object-cover" />
+              {resolvedImageUrl && (
+                <AvatarImage src={resolvedImageUrl} alt="Food" className="object-cover" />
               )}
               <AvatarFallback className="rounded-none bg-orange-100">
                 <Utensils className="h-8 w-8 text-orange-600" />

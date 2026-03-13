@@ -15,9 +15,6 @@ import { ModernFilterBar } from "@/components/common/ModernFilterBar";
 import { calculateVegetarianPercentage } from "@/utils/vegetarianUtils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent } from "@/components/ui/card";
-// import { useAnalysisQueue } from "@/hooks/useAnalysisQueue"; // Removed - moved away from queue system
-// import { Badge } from "@/components/ui/badge"; // Removed with queue system
-// import { Progress } from "@/components/ui/progress"; // Removed with queue system
 
 interface FoodEntry {
   id: string;
@@ -44,9 +41,6 @@ const Food = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-
-  // Queue system removed - we moved away from queue-based processing
-  // const { jobs, fetchJobs } = useAnalysisQueue();
 
   // Filter states - Default to last 3 days
   const [searchTerm, setSearchTerm] = useState('');

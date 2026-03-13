@@ -36,6 +36,70 @@ export function FinanceOverviewTab({ data, onCategoryClick }: FinanceOverviewTab
 
   return (
     <div className="space-y-4">
+      {/* Spending Heat Map - at top for quick overview */}
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader className="pb-2">
+          <div>
+            <CardTitle className="text-base font-semibold">Spending Heat Map</CardTitle>
+            <p className="text-xs text-gray-500">Darker = higher spend that month. Click a category to analyze.</p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs" style={{ borderCollapse: "separate", borderSpacing: 3 }}>
+              <thead>
+                <tr>
+                  <th className="px-2 py-1.5 text-left font-semibold min-w-[110px]">Category</th>
+                  {monthlyData.map((m) => (
+                    <th key={m.month} className="px-1 py-1.5 text-center font-medium min-w-[55px] text-[10px]">
+                      {m.month.replace(" 20", " '")}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {heatMapData.map((row) => {
+                  const catInfo = categoryTotals.find((c) => c.name === row.category);
+                  const color = catInfo?.color || "#6b7280";
+                  return (
+                    <tr
+                      key={row.category}
+                      className="cursor-pointer hover:bg-gray-50"
+                      onClick={() => onCategoryClick(row.category)}
+                    >
+                      <td className="px-2 py-1.5 font-medium whitespace-nowrap">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-sm inline-block" style={{ background: color }} />
+                          {row.category}
+                        </span>
+                      </td>
+                      {monthlyData.map((m) => {
+                        const val = row[m.month] || 0;
+                        const intensity = row._max > 0 ? (val as number) / row._max : 0;
+                        return (
+                          <td
+                            key={m.month}
+                            className="px-1 py-1.5 text-center rounded"
+                            style={{
+                              background: val > 0 ? `${color}${Math.round(intensity * 200 + 20).toString(16).padStart(2, "0")}` : "#f8fafc",
+                              color: intensity > 0.6 ? "white" : "#334155",
+                              fontWeight: val > 0 ? 500 : 400,
+                              fontSize: 10,
+                            }}
+                          >
+                            {val > 0 ? `$${Math.round(val as number).toLocaleString()}` : "-"}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Income vs Expenses + Quick Read */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 border border-gray-200 shadow-sm">
@@ -236,70 +300,6 @@ export function FinanceOverviewTab({ data, onCategoryClick }: FinanceOverviewTab
           </CardContent>
         </Card>
       </div>
-
-      {/* Spending Heat Map */}
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader className="pb-2">
-          <div>
-            <CardTitle className="text-base font-semibold">Spending Heat Map</CardTitle>
-            <p className="text-xs text-gray-500">Darker = higher spend that month. Click a category to analyze.</p>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs" style={{ borderCollapse: "separate", borderSpacing: 3 }}>
-              <thead>
-                <tr>
-                  <th className="px-2 py-1.5 text-left font-semibold min-w-[110px]">Category</th>
-                  {monthlyData.map((m) => (
-                    <th key={m.month} className="px-1 py-1.5 text-center font-medium min-w-[55px] text-[10px]">
-                      {m.month.replace(" 20", " '")}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {heatMapData.map((row) => {
-                  const catInfo = categoryTotals.find((c) => c.name === row.category);
-                  const color = catInfo?.color || "#6b7280";
-                  return (
-                    <tr
-                      key={row.category}
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => onCategoryClick(row.category)}
-                    >
-                      <td className="px-2 py-1.5 font-medium whitespace-nowrap">
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-sm inline-block" style={{ background: color }} />
-                          {row.category}
-                        </span>
-                      </td>
-                      {monthlyData.map((m) => {
-                        const val = row[m.month] || 0;
-                        const intensity = row._max > 0 ? (val as number) / row._max : 0;
-                        return (
-                          <td
-                            key={m.month}
-                            className="px-1 py-1.5 text-center rounded"
-                            style={{
-                              background: val > 0 ? `${color}${Math.round(intensity * 200 + 20).toString(16).padStart(2, "0")}` : "#f8fafc",
-                              color: intensity > 0.6 ? "white" : "#334155",
-                              fontWeight: val > 0 ? 500 : 400,
-                              fontSize: 10,
-                            }}
-                          >
-                            {val > 0 ? `$${Math.round(val as number).toLocaleString()}` : "-"}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Category Mix */}
       <Card className="border border-gray-200 shadow-sm">

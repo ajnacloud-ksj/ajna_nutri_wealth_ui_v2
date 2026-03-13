@@ -138,7 +138,7 @@ export function FinanceDashboard() {
           onClick={() => { setShowUpload(!showUpload); setUploadStatus("idle"); }}
           className={`shrink-0 ${showUpload ? "bg-green-600 hover:bg-green-700" : ""}`}
         >
-          <Upload className="h-3.5 w-3.5 mr-1.5" /> Import CSV
+          <Upload className="h-3.5 w-3.5 mr-1.5" /> Import Bank Statements
         </Button>
       </div>
 
@@ -193,7 +193,7 @@ export function FinanceDashboard() {
           <CardContent className="py-12 text-center">
             <Upload className="h-10 w-10 text-gray-300 mx-auto mb-3" />
             <p className="text-sm font-medium text-gray-600">No transaction data yet</p>
-            <p className="text-xs text-gray-400 mt-1">Click "Import CSV" above to upload your first bank statement.</p>
+            <p className="text-xs text-gray-400 mt-1">Click "Import Bank Statements" above to upload your first bank statement.</p>
           </CardContent>
         </Card>
       )}

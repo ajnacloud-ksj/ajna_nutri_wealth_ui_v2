@@ -315,17 +315,9 @@ const ReceiptDetails = () => {
                 <Receipt className="h-6 w-6 text-white" />
               </div>
               <div>
-                {editing ? (
-                  <Input
-                    value={editedData.vendor || ""}
-                    onChange={(e) => setEditedData({ ...editedData, vendor: e.target.value })}
-                    className="text-xl font-bold h-9 w-64"
-                  />
-                ) : (
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-                    {receipt.vendor}
-                  </h1>
-                )}
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+                  {editing ? (editedData.vendor || receipt.vendor) : receipt.vendor}
+                </h1>
                 <div className="flex items-center gap-3 text-sm text-gray-500 mt-0.5">
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3.5 w-3.5" />
@@ -386,19 +378,7 @@ const ReceiptDetails = () => {
           <SummaryCard
             icon={<DollarSign className="h-5 w-5 text-green-600" />}
             label="Total"
-            value={
-              editing ? (
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={editedData.total_amount || 0}
-                  onChange={(e) => setEditedData({ ...editedData, total_amount: parseFloat(e.target.value) || 0 })}
-                  className="h-7 text-sm w-24"
-                />
-              ) : (
-                formatCurrency(receipt.total_amount)
-              )
-            }
+            value={formatCurrency(editing ? (editedData.total_amount || 0) : receipt.total_amount)}
             highlight
           />
           <SummaryCard
@@ -472,39 +452,47 @@ const ReceiptDetails = () => {
             </CardHeader>
             <CardContent className="pt-4">
               <div className="space-y-3">
-                <InfoRow label="Vendor" value={receipt.vendor} />
-                <InfoRow label="Date" value={formatDate(receipt.receipt_date || receipt.created_at)} />
-                {time && <InfoRow label="Time" value={time} />}
-                {receipt.purchase_channel && (
-                  <InfoRow
-                    label="Category"
-                    value={<Badge variant="secondary">{receipt.purchase_channel}</Badge>}
-                  />
+                <InfoRow label="Vendor" value={editing
+                  ? <Input value={editedData.vendor || ''} onChange={(e) => setEditedData({ ...editedData, vendor: e.target.value })} className="h-8 text-sm w-48" />
+                  : receipt.vendor
+                } />
+                <InfoRow label="Date" value={editing
+                  ? <Input type="date" value={(editedData.receipt_date || '').split('T')[0]} onChange={(e) => setEditedData({ ...editedData, receipt_date: e.target.value })} className="h-8 text-sm w-48" />
+                  : formatDate(receipt.receipt_date || receipt.created_at)
+                } />
+                <InfoRow label="Time" value={editing
+                  ? <Input type="time" value={editedData.receipt_time || ''} onChange={(e) => setEditedData({ ...editedData, receipt_time: e.target.value })} className="h-8 text-sm w-48" />
+                  : (time || 'N/A')
+                } />
+                <InfoRow label="Category" value={editing
+                  ? <Input value={editedData.purchase_channel || ''} onChange={(e) => setEditedData({ ...editedData, purchase_channel: e.target.value })} className="h-8 text-sm w-48" placeholder="e.g. Retail, Grocery" />
+                  : (receipt.purchase_channel ? <Badge variant="secondary">{receipt.purchase_channel}</Badge> : <span className="text-gray-400">—</span>)
+                } />
+                {(receipt.receipt_id || editing) && (
+                  <InfoRow label="Receipt #" value={editing
+                    ? <Input value={editedData.receipt_id || ''} onChange={(e) => setEditedData({ ...editedData, receipt_id: e.target.value })} className="h-8 text-sm w-48 font-mono" />
+                    : receipt.receipt_id
+                  } mono />
                 )}
-                {receipt.receipt_id && <InfoRow label="Receipt #" value={receipt.receipt_id} mono />}
-                {receipt.transaction_id && <InfoRow label="Transaction ID" value={receipt.transaction_id} mono />}
-                {receipt.currency && receipt.currency !== "USD" && (
-                  <InfoRow label="Currency" value={receipt.currency} />
-                )}
-                {receipt.notes && <InfoRow label="Notes" value={receipt.notes} />}
-                {tags.length > 0 && (
-                  <InfoRow
-                    label="Tags"
-                    value={
-                      <div className="flex gap-1.5 flex-wrap">
-                        {tags.map((tag, i) => (
-                          <Badge key={i} variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    }
-                  />
-                )}
-                <Separator className="my-2" />
-                <InfoRow label="Created" value={formatDate(receipt.created_at)} />
-                {receipt.updated_at && receipt.updated_at !== receipt.created_at && (
-                  <InfoRow label="Updated" value={formatDate(receipt.updated_at)} />
+                <InfoRow label="Notes" value={editing
+                  ? <Input value={editedData.notes || ''} onChange={(e) => setEditedData({ ...editedData, notes: e.target.value })} className="h-8 text-sm w-48" placeholder="Add notes..." />
+                  : (receipt.notes || <span className="text-gray-400">—</span>)
+                } />
+                <InfoRow label="Tags" value={editing
+                  ? <Input value={typeof editedData.tags === 'string' ? editedData.tags : (editedData.tags || []).join(', ')} onChange={(e) => setEditedData({ ...editedData, tags: e.target.value })} className="h-8 text-sm w-48" placeholder="tag1, tag2" />
+                  : (tags.length > 0
+                    ? <div className="flex gap-1.5 flex-wrap">{tags.map((tag, i) => <Badge key={i} variant="outline" className="bg-green-50 text-green-700 border-green-200">{tag}</Badge>)}</div>
+                    : <span className="text-gray-400">—</span>
+                  )
+                } />
+                {!editing && (
+                  <>
+                    <Separator className="my-2" />
+                    <InfoRow label="Created" value={formatDate(receipt.created_at)} />
+                    {receipt.updated_at && receipt.updated_at !== receipt.created_at && (
+                      <InfoRow label="Updated" value={formatDate(receipt.updated_at)} />
+                    )}
+                  </>
                 )}
               </div>
             </CardContent>
@@ -522,38 +510,42 @@ const ReceiptDetails = () => {
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="space-y-3">
-                  <InfoRow label="Total Amount" value={<span className="font-bold text-green-600 text-lg">{formatCurrency(receipt.total_amount)}</span>} />
-                  {hasFinancialBreakdown && (
-                    <>
-                      <InfoRow label="Subtotal" value={formatCurrency(receipt.subtotal)} />
-                      {receipt.tax_amount !== undefined && receipt.tax_amount !== null && (
-                        <InfoRow label="Tax" value={formatCurrency(receipt.tax_amount)} />
-                      )}
-                      {receipt.discount_amount !== undefined && receipt.discount_amount !== null && receipt.discount_amount > 0 && (
-                        <InfoRow label="Discount" value={<span className="text-green-600">-{formatCurrency(receipt.discount_amount)}</span>} />
-                      )}
-                    </>
-                  )}
+                  <InfoRow label="Total Amount" value={editing
+                    ? <Input type="number" step="0.01" value={editedData.total_amount || 0} onChange={(e) => setEditedData({ ...editedData, total_amount: parseFloat(e.target.value) || 0 })} className="h-8 text-sm w-32" />
+                    : <span className="font-bold text-green-600 text-lg">{formatCurrency(receipt.total_amount)}</span>
+                  } />
+                  <InfoRow label="Subtotal" value={editing
+                    ? <Input type="number" step="0.01" value={editedData.subtotal ?? ''} onChange={(e) => setEditedData({ ...editedData, subtotal: parseFloat(e.target.value) || 0 })} className="h-8 text-sm w-32" />
+                    : formatCurrency(receipt.subtotal)
+                  } />
+                  <InfoRow label="Tax" value={editing
+                    ? <Input type="number" step="0.01" value={editedData.tax_amount ?? ''} onChange={(e) => setEditedData({ ...editedData, tax_amount: parseFloat(e.target.value) || 0 })} className="h-8 text-sm w-32" />
+                    : formatCurrency(receipt.tax_amount)
+                  } />
+                  <InfoRow label="Discount" value={editing
+                    ? <Input type="number" step="0.01" value={editedData.discount_amount ?? ''} onChange={(e) => setEditedData({ ...editedData, discount_amount: parseFloat(e.target.value) || 0 })} className="h-8 text-sm w-32" />
+                    : (receipt.discount_amount ? <span className="text-green-600">-{formatCurrency(receipt.discount_amount)}</span> : formatCurrency(0))
+                  } />
                   <Separator className="my-2" />
-                  {receipt.payment_method && (
-                    <InfoRow
-                      label="Method"
-                      value={
-                        <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
-                          {receipt.payment_method}
-                        </Badge>
-                      }
-                    />
-                  )}
-                  {receipt.card_last_digits && (
-                    <InfoRow label="Card" value={<span className="font-mono">**** **** **** {receipt.card_last_digits}</span>} />
+                  <InfoRow label="Method" value={editing
+                    ? <Input value={editedData.payment_method || ''} onChange={(e) => setEditedData({ ...editedData, payment_method: e.target.value })} className="h-8 text-sm w-32" placeholder="Cash, Card..." />
+                    : (receipt.payment_method
+                      ? <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">{receipt.payment_method}</Badge>
+                      : <span className="text-gray-400">—</span>
+                    )
+                  } />
+                  {(receipt.card_last_digits || editing) && (
+                    <InfoRow label="Card" value={editing
+                      ? <Input value={editedData.card_last_digits || ''} onChange={(e) => setEditedData({ ...editedData, card_last_digits: e.target.value })} className="h-8 text-sm w-32 font-mono" placeholder="Last 4 digits" maxLength={4} />
+                      : <span className="font-mono">**** **** **** {receipt.card_last_digits}</span>
+                    } />
                   )}
                 </div>
               </CardContent>
             </Card>
 
             {/* Store Info */}
-            {hasAddress && (
+            {(hasAddress || editing) && (
               <Card className="border-green-200/50 shadow-sm">
                 <CardHeader className="border-b border-green-100/50 bg-gradient-to-r from-green-50/50 to-white pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg text-green-700">
@@ -563,15 +555,23 @@ const ReceiptDetails = () => {
                 </CardHeader>
                 <CardContent className="pt-4">
                   <div className="space-y-3">
-                    <InfoRow label="Store" value={receipt.vendor} />
-                    {receipt.store_address && <InfoRow label="Address" value={receipt.store_address} />}
-                    {(receipt.city || receipt.state || receipt.postal_code) && (
-                      <InfoRow
-                        label="Location"
-                        value={[receipt.city, receipt.state, receipt.postal_code].filter(Boolean).join(", ")}
-                      />
+                    {editing ? (
+                      <>
+                        <InfoRow label="Address" value={<Input value={editedData.store_address || ''} onChange={(e) => setEditedData({ ...editedData, store_address: e.target.value })} className="h-8 text-sm w-48" placeholder="Street address" />} />
+                        <InfoRow label="City" value={<Input value={editedData.city || ''} onChange={(e) => setEditedData({ ...editedData, city: e.target.value })} className="h-8 text-sm w-48" />} />
+                        <InfoRow label="State" value={<Input value={editedData.state || ''} onChange={(e) => setEditedData({ ...editedData, state: e.target.value })} className="h-8 text-sm w-48" />} />
+                        <InfoRow label="Zip" value={<Input value={editedData.postal_code || ''} onChange={(e) => setEditedData({ ...editedData, postal_code: e.target.value })} className="h-8 text-sm w-48" />} />
+                      </>
+                    ) : (
+                      <>
+                        <InfoRow label="Store" value={receipt.vendor} />
+                        {receipt.store_address && <InfoRow label="Address" value={receipt.store_address} />}
+                        {(receipt.city || receipt.state || receipt.postal_code) && (
+                          <InfoRow label="Location" value={[receipt.city, receipt.state, receipt.postal_code].filter(Boolean).join(", ")} />
+                        )}
+                        {receipt.country && <InfoRow label="Country" value={receipt.country} />}
+                      </>
                     )}
-                    {receipt.country && <InfoRow label="Country" value={receipt.country} />}
                   </div>
                 </CardContent>
               </Card>

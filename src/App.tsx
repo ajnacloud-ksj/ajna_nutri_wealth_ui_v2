@@ -9,6 +9,7 @@ import { UserTypeProvider } from "@/contexts/UserTypeContext";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { CaretakerDataProvider } from "@/contexts/CaretakerDataContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import PWAUpdateManager from "@/components/pwa/PWAUpdateManager";
 import EnhancedPWAInstallPrompt from "@/components/pwa/EnhancedPWAInstallPrompt";
 import NotificationPanel from "@/components/notifications/NotificationPanel";
@@ -54,6 +55,7 @@ function App() {
               <CaretakerDataProvider>
                 <NotificationProvider>
                 <Router>
+                  <ErrorBoundary>
                   <div className="min-h-screen bg-background w-full">
                     <PWAUpdateManager />
                     <EnhancedPWAInstallPrompt />
@@ -100,6 +102,7 @@ function App() {
                   </div>
                   <Toaster />
                   <ShadcnToaster />
+                  </ErrorBoundary>
                 </Router>
               </NotificationProvider>
             </CaretakerDataProvider>

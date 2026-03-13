@@ -1,31 +1,158 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Loader2 } from "lucide-react";
+import { Mic, Square, Loader2, Languages } from "lucide-react";
 import { toast } from "sonner";
 import { backendApi } from "@/lib/api/client";
+
+type VoiceEngine = "whisper" | "sarvam";
 
 interface WhisperVoiceRecorderProps {
   onTranscription: (text: string) => void;
   disabled?: boolean;
   /** Compact mode shows just an icon button */
   compact?: boolean;
+  /** Seconds of silence before auto-stop (default 2s) */
+  silenceTimeout?: number;
+  /** Default engine (default: "sarvam") */
+  defaultEngine?: VoiceEngine;
 }
 
 /**
- * Records audio via MediaRecorder, sends to backend Whisper API for transcription.
- * Works across all browsers (Chrome, Safari, Firefox, Edge).
+ * Records audio via MediaRecorder, sends to backend for transcription.
+ * Supports OpenAI Whisper and Sarvam AI Saaras engines.
+ * Auto-stops after detecting silence. Works across all browsers.
  */
-const WhisperVoiceRecorder = ({ onTranscription, disabled = false, compact = false }: WhisperVoiceRecorderProps) => {
+const WhisperVoiceRecorder = ({
+  onTranscription,
+  disabled = false,
+  compact = false,
+  silenceTimeout = 2,
+  defaultEngine = "sarvam",
+}: WhisperVoiceRecorderProps) => {
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  const [engine, setEngine] = useState<VoiceEngine>(defaultEngine);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const hasSpeechRef = useRef(false);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    };
+  }, []);
+
+  const transcribeAudio = useCallback(async (blob: Blob, mimeType: string) => {
+    if (blob.size < 100) {
+      toast.error("Recording too short. Try again.");
+      return;
+    }
+
+    setTranscribing(true);
+    try {
+      const buffer = await blob.arrayBuffer();
+      const base64 = btoa(
+        new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+      );
+
+      const format = mimeType.includes("mp4") ? "mp4" : "webm";
+
+      const { data, error } = await backendApi.post("/v1/voice/transcribe", {
+        audio: base64,
+        format,
+        engine,
+        language: "unknown",
+      });
+
+      if (error || !data?.text) {
+        toast.error(data?.error || "Transcription failed");
+        return;
+      }
+
+      onTranscription(data.text);
+      const engineLabel = data.engine === "sarvam" ? "Sarvam" : "Whisper";
+      toast.success(`${engineLabel}: "${data.text.slice(0, 60)}${data.text.length > 60 ? "..." : ""}"`);
+    } catch (e: any) {
+      toast.error("Transcription failed");
+      console.error("Voice transcription error:", e);
+    } finally {
+      setTranscribing(false);
+    }
+  }, [onTranscription, engine]);
+
+  const stopRecording = useCallback(() => {
+    // Clean up silence detection
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    setRecording(false);
+  }, []);
+
+  const startSilenceDetection = useCallback((stream: MediaStream) => {
+    try {
+      const audioCtx = new AudioContext();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.3;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const SILENCE_THRESHOLD = 15; // audio level below this = silence
+
+      hasSpeechRef.current = false;
+
+      const checkLevel = () => {
+        if (!analyserRef.current) return;
+
+        analyser.getByteFrequencyData(dataArray);
+        const avg = dataArray.reduce((sum, v) => sum + v, 0) / dataArray.length;
+
+        if (avg > SILENCE_THRESHOLD) {
+          hasSpeechRef.current = true;
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
+          }
+        } else if (hasSpeechRef.current && !silenceTimerRef.current) {
+          // Silence after speech — start countdown
+          silenceTimerRef.current = setTimeout(() => {
+            toast.info("Silence detected — auto-stopping...");
+            stopRecording();
+            audioCtx.close().catch(() => {});
+          }, silenceTimeout * 1000);
+        }
+
+        animFrameRef.current = requestAnimationFrame(checkLevel);
+      };
+
+      checkLevel();
+    } catch (e) {
+      console.warn("Silence detection not available:", e);
+    }
+  }, [silenceTimeout, stopRecording]);
 
   const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
 
-      // Pick a supported mime type
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
         : MediaRecorder.isTypeSupported("audio/webm")
@@ -42,49 +169,20 @@ const WhisperVoiceRecorder = ({ onTranscription, disabled = false, compact = fal
       };
 
       recorder.onstop = async () => {
-        // Stop all tracks
         stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
 
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
-        if (blob.size < 100) {
-          toast.error("Recording too short. Try again.");
-          return;
-        }
-
-        // Convert to base64
-        setTranscribing(true);
-        try {
-          const buffer = await blob.arrayBuffer();
-          const base64 = btoa(
-            new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
-          );
-
-          const format = recorder.mimeType?.includes("mp4") ? "mp4" : "webm";
-
-          const { data, error } = await backendApi.post("/v1/voice/transcribe", {
-            audio: base64,
-            format,
-          });
-
-          if (error || !data?.text) {
-            toast.error(data?.error || "Transcription failed");
-            return;
-          }
-
-          onTranscription(data.text);
-          toast.success(`Transcribed: "${data.text.slice(0, 60)}${data.text.length > 60 ? "..." : ""}"`);
-        } catch (e: any) {
-          toast.error("Transcription failed");
-          console.error("Whisper transcription error:", e);
-        } finally {
-          setTranscribing(false);
-        }
+        await transcribeAudio(blob, recorder.mimeType || "audio/webm");
       };
 
-      recorder.start(250); // collect chunks every 250ms
+      recorder.start(250);
       mediaRecorderRef.current = recorder;
       setRecording(true);
-      toast.success("Recording... Speak now!");
+      const engineLabel = engine === "sarvam" ? "Sarvam AI" : "Whisper";
+      toast.success(`Recording (${engineLabel})... Speak now!`);
+
+      startSilenceDetection(stream);
     } catch (e: any) {
       if (e.name === "NotAllowedError") {
         toast.error("Microphone permission denied. Please allow microphone access.");
@@ -93,14 +191,7 @@ const WhisperVoiceRecorder = ({ onTranscription, disabled = false, compact = fal
         console.error("MediaRecorder error:", e);
       }
     }
-  }, [onTranscription]);
-
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
-    }
-    setRecording(false);
-  }, []);
+  }, [transcribeAudio, startSilenceDetection, engine]);
 
   const handleClick = () => {
     if (disabled || transcribing) return;
@@ -109,6 +200,13 @@ const WhisperVoiceRecorder = ({ onTranscription, disabled = false, compact = fal
     } else {
       startRecording();
     }
+  };
+
+  const toggleEngine = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (recording || transcribing) return;
+    setEngine(prev => prev === "whisper" ? "sarvam" : "whisper");
+    toast.info(`Switched to ${engine === "whisper" ? "Sarvam AI" : "Whisper"}`);
   };
 
   if (compact) {
@@ -120,7 +218,7 @@ const WhisperVoiceRecorder = ({ onTranscription, disabled = false, compact = fal
         onClick={handleClick}
         disabled={disabled || transcribing}
         className="h-8 w-8 p-0"
-        title={recording ? "Stop recording" : transcribing ? "Transcribing..." : "Record voice"}
+        title={recording ? "Stop recording" : transcribing ? "Transcribing..." : `Record voice (${engine})`}
       >
         {transcribing ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -134,35 +232,49 @@ const WhisperVoiceRecorder = ({ onTranscription, disabled = false, compact = fal
   }
 
   return (
-    <Button
-      type="button"
-      variant={recording ? "destructive" : "outline"}
-      size="sm"
-      onClick={handleClick}
-      disabled={disabled || transcribing}
-      className="flex items-center gap-2"
-    >
-      {transcribing ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Transcribing...
-        </>
-      ) : recording ? (
-        <>
-          <Square className="h-4 w-4" />
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
-          </span>
-          Stop
-        </>
-      ) : (
-        <>
-          <Mic className="h-4 w-4" />
-          Voice
-        </>
-      )}
-    </Button>
+    <div className="flex items-center gap-1">
+      <Button
+        type="button"
+        variant={recording ? "destructive" : "outline"}
+        size="sm"
+        onClick={handleClick}
+        disabled={disabled || transcribing}
+        className="flex items-center gap-2"
+      >
+        {transcribing ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Transcribing...
+          </>
+        ) : recording ? (
+          <>
+            <Square className="h-4 w-4" />
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+            </span>
+            Stop
+          </>
+        ) : (
+          <>
+            <Mic className="h-4 w-4" />
+            Voice
+          </>
+        )}
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={toggleEngine}
+        disabled={disabled || recording || transcribing}
+        className="h-8 px-2 text-xs text-muted-foreground"
+        title={`Using ${engine === "sarvam" ? "Sarvam AI Saaras" : "OpenAI Whisper"}. Click to switch.`}
+      >
+        <Languages className="h-3 w-3 mr-1" />
+        {engine === "sarvam" ? "Sarvam" : "Whisper"}
+      </Button>
+    </div>
   );
 };
 

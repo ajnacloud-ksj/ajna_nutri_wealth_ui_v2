@@ -17,7 +17,7 @@ const AdminUserTable = () => {
   const fetchUsers = async () => {
     try {
       const { data, error } = await backendApi
-        .from('app_users')
+        .from('app_users_v4')
         .select('*')
         .order('created_at', { ascending: false });
 

@@ -115,12 +115,12 @@ export const ReceiptFilters = ({ onFiltersChange, vendors, totalCount, filteredC
                 <Store className="h-4 w-4" />
                 Vendor
               </label>
-              <Select value={filters.vendor} onValueChange={(value) => updateFilters({ vendor: value })}>
+              <Select value={filters.vendor || "all"} onValueChange={(value) => updateFilters({ vendor: value === "all" ? "" : value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="All vendors" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All vendors</SelectItem>
+                  <SelectItem value="all">All vendors</SelectItem>
                   {vendors.map((vendor) => (
                     <SelectItem key={vendor} value={vendor}>
                       {vendor}
@@ -163,12 +163,12 @@ export const ReceiptFilters = ({ onFiltersChange, vendors, totalCount, filteredC
                 <Calendar className="h-4 w-4" />
                 Date Range
               </label>
-              <Select value={filters.dateRange} onValueChange={(value) => updateFilters({ dateRange: value })}>
+              <Select value={filters.dateRange || "all"} onValueChange={(value) => updateFilters({ dateRange: value === "all" ? "" : value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="All time" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All time</SelectItem>
+                  <SelectItem value="all">All time</SelectItem>
                   <SelectItem value="today">Today</SelectItem>
                   <SelectItem value="week">This week</SelectItem>
                   <SelectItem value="month">This month</SelectItem>

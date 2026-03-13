@@ -670,12 +670,12 @@ const CaretakerSettings = () => {
                       onChange={(e) => setLogFilterCaretaker(e.target.value)}
                     />
                   </div>
-                  <Select value={logFilterCategory} onValueChange={setLogFilterCategory}>
+                  <Select value={logFilterCategory || "all"} onValueChange={(v) => setLogFilterCategory(v === "all" ? "" : v)}>
                     <SelectTrigger className="w-full sm:w-48">
                       <SelectValue placeholder="All categories" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All categories</SelectItem>
+                      <SelectItem value="all">All categories</SelectItem>
                       {CATEGORIES.map((cat) => (
                         <SelectItem key={cat} value={cat} className="capitalize">
                           {cat.replace("_", " ")}

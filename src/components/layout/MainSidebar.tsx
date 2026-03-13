@@ -11,6 +11,7 @@ import {
   LogOut,
   Home,
   Settings,
+  Shield,
   GitCompare,
   Users,
   UserPlus,

@@ -13,6 +13,7 @@ import { uploadFile } from "@/utils/analysisService";
 import { useUsageCheck } from "@/hooks/useUsageCheck";
 import { useAuth } from "@/contexts/AuthContext";
 import { createPendingAnalysis } from "@/utils/pendingAnalysisService";
+import WhisperVoiceRecorder from "./WhisperVoiceRecorder";
 
 interface QuickCaptureModalProps {
   isOpen: boolean;
@@ -177,6 +178,12 @@ export const QuickCaptureModal = ({ isOpen, onClose, onAnalysisStarted }: QuickC
               rows={3}
               className="text-sm"
             />
+            <div className="flex justify-end">
+              <WhisperVoiceRecorder
+                onTranscription={(text) => setDescription(prev => prev ? `${prev} ${text}` : text)}
+                disabled={loading}
+              />
+            </div>
           </div>
 
           {error && (

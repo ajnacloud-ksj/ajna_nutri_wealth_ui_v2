@@ -17,6 +17,7 @@ import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import VoiceInput from "@/components/capture/VoiceInput";
 
 interface ShoppingItem {
   id: string;
@@ -379,21 +380,29 @@ const ShoppingLists = () => {
                       }}
                       className="min-h-[60px] text-sm resize-none"
                     />
-                    <Button
-                      onClick={addItems}
-                      disabled={addingItems || !addItemText.trim()}
-                      className="self-end h-10 px-4"
-                    >
-                      {addingItems ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
-                    </Button>
+                    <div className="flex flex-col gap-2 self-end">
+                      <Button
+                        onClick={addItems}
+                        disabled={addingItems || !addItemText.trim()}
+                        className="h-10 px-4"
+                      >
+                        {addingItems ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    AI will parse your text into structured items with prices and categories.
-                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs text-muted-foreground">
+                      Type or speak your items — AI parses them automatically.
+                    </p>
+                    <VoiceInput
+                      onTranscription={(text) => setAddItemText((prev) => prev ? `${prev}, ${text}` : text)}
+                      disabled={addingItems}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 

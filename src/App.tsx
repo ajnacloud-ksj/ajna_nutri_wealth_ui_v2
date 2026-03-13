@@ -37,6 +37,7 @@ const Billing = lazy(() => import("./pages/Billing"));
 const Reconciliation = lazy(() => import("./pages/Reconciliation"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Queue = lazy(() => import("./pages/Queue"));
+const ShoppingLists = lazy(() => import("./pages/ShoppingLists"));
 
 // Route components
 import PublicRoute from "./components/routes/PublicRoute";
@@ -90,6 +91,9 @@ function App() {
                       {/* Receipt Scanning */}
                       <Route path="/receipts" element={<PrivateRoute><Receipts /></PrivateRoute>} />
                       <Route path="/receipts/:id" element={<PrivateRoute><ReceiptDetails /></PrivateRoute>} />
+
+                      {/* Shopping Lists */}
+                      <Route path="/shopping" element={<PrivateRoute><ShoppingLists /></PrivateRoute>} />
 
                       {/* Analytics & Settings */}
                       <Route path="/insights" element={<PrivateRoute><Insights /></PrivateRoute>} />

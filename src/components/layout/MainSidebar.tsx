@@ -15,6 +15,7 @@ import {
   GitCompare,
   Users,
   UserPlus,
+  ShoppingCart,
 } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
@@ -98,6 +99,7 @@ export const MainSidebar = () => {
     { name: "Capture", href: "/capture", icon: Camera },
     { name: "Food", href: "/food", icon: Utensils },
     { name: "Receipts", href: "/receipts", icon: FileText },
+    { name: "Shopping", href: "/shopping", icon: ShoppingCart },
     { name: "Workouts", href: "/workouts", icon: Dumbbell },
     { name: "Finance", href: "/insights", icon: BarChart3 },
     { name: "Reconciliation", href: "/reconciliation", icon: GitCompare },

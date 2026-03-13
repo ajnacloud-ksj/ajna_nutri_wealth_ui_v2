@@ -17,7 +17,7 @@ import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import VoiceInput from "@/components/capture/VoiceInput";
+import WhisperVoiceRecorder from "@/components/capture/WhisperVoiceRecorder";
 
 interface ShoppingItem {
   id: string;
@@ -398,7 +398,7 @@ const ShoppingLists = () => {
                     <p className="text-xs text-muted-foreground">
                       Type or speak your items — AI parses them automatically.
                     </p>
-                    <VoiceInput
+                    <WhisperVoiceRecorder
                       onTranscription={(text) => setAddItemText((prev) => prev ? `${prev}, ${text}` : text)}
                       disabled={addingItems}
                     />

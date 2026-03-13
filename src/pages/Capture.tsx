@@ -14,7 +14,7 @@ import { uploadFile } from "@/utils/analysisService";
 import { useUsageCheck } from "@/hooks/useUsageCheck";
 import { useAuth } from "@/contexts/AuthContext";
 import { createPendingAnalysis } from "@/utils/pendingAnalysisService";
-import VoiceInput from "@/components/capture/VoiceInput";
+import WhisperVoiceRecorder from "@/components/capture/WhisperVoiceRecorder";
 import PullToRefresh from "@/components/pwa/PullToRefresh";
 import { useAnalysisQueue } from "@/hooks/useAnalysisQueue";
 
@@ -256,10 +256,9 @@ const Capture = () => {
                       className="text-base"
                     />
                     <div className="flex justify-end">
-                      <VoiceInput
+                      <WhisperVoiceRecorder
                         onTranscription={handleVoiceTranscription}
                         disabled={loading}
-                        placeholder="Add voice note"
                       />
                     </div>
                   </div>

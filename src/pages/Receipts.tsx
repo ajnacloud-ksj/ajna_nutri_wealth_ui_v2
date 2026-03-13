@@ -294,7 +294,7 @@ const Receipts = () => {
         ) : (
           <>
             {viewMode === 'grid' ? (
-              <div className="grid gap-3">
+              <div className="space-y-1.5">
                 {processedReceipts.map((receipt) => (
                   <ModernReceiptCard
                     key={receipt.id}

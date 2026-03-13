@@ -1,5 +1,3 @@
-
-import { Card, CardContent } from "@/components/ui/card";
 import { Receipt, DollarSign, Calendar, TrendingUp } from "lucide-react";
 import { ReceiptEntry } from "@/types/receipt";
 
@@ -12,7 +10,6 @@ export const CompactReceiptStatsGrid = ({ receipts }: CompactReceiptStatsGridPro
   const totalAmount = receipts.reduce((sum, receipt) => sum + (receipt.total_amount || 0), 0);
   const avgAmount = totalReceipts > 0 ? totalAmount / totalReceipts : 0;
 
-  // Calculate this month's spending
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   const thisMonthReceipts = receipts.filter(receipt => {
@@ -28,55 +25,26 @@ export const CompactReceiptStatsGrid = ({ receipts }: CompactReceiptStatsGridPro
     }).format(amount);
   };
 
+  const stats = [
+    { label: 'Receipts', value: String(totalReceipts), icon: Receipt, color: 'text-blue-600 bg-blue-50' },
+    { label: 'Total Spent', value: formatCurrency(totalAmount), icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
+    { label: 'This Month', value: formatCurrency(thisMonthAmount), icon: Calendar, color: 'text-violet-600 bg-violet-50' },
+    { label: 'Average', value: formatCurrency(avgAmount), icon: TrendingUp, color: 'text-amber-600 bg-amber-50' },
+  ];
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <Card className="bg-gradient-to-br from-orange-500 to-red-500 text-white border-0 shadow-md">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-100 text-xs font-medium">Total Receipts</p>
-              <p className="text-xl font-bold">{totalReceipts}</p>
-            </div>
-            <Receipt className="h-6 w-6 text-orange-200" />
+      {stats.map((stat) => (
+        <div key={stat.label} className="flex items-center gap-3 p-3 rounded-xl border bg-white">
+          <div className={`p-2 rounded-lg ${stat.color}`}>
+            <stat.icon className="h-4 w-4" />
           </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-gradient-to-br from-blue-500 to-purple-500 text-white border-0 shadow-md">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-xs font-medium">Total Spending</p>
-              <p className="text-xl font-bold">{formatCurrency(totalAmount)}</p>
-            </div>
-            <DollarSign className="h-6 w-6 text-blue-200" />
+          <div>
+            <div className="text-lg font-bold tabular-nums leading-tight">{stat.value}</div>
+            <div className="text-xs text-muted-foreground">{stat.label}</div>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-gradient-to-br from-green-500 to-emerald-500 text-white border-0 shadow-md">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-xs font-medium">This Month</p>
-              <p className="text-xl font-bold">{formatCurrency(thisMonthAmount)}</p>
-            </div>
-            <Calendar className="h-6 w-6 text-green-200" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-gradient-to-br from-emerald-500 to-green-600 text-white border-0 shadow-md">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-emerald-100 text-xs font-medium">Avg Spending</p>
-              <p className="text-xl font-bold">{formatCurrency(avgAmount)}</p>
-            </div>
-            <TrendingUp className="h-6 w-6 text-emerald-200" />
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      ))}
     </div>
   );
 };

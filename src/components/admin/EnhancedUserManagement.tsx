@@ -66,12 +66,24 @@ const EnhancedUserManagement = () => {
     try {
       setLoading(true);
       const { data, error } = await backendApi
-        .from('users')
+        .from('app_users')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setUsers(data || []);
+
+      // Deduplicate users by email - keep the most recent entry (first one due to ordering)
+      const uniqueUsers = (data || []).reduce((acc: User[], user: User) => {
+        const existingUser = acc.find(u => u.email === user.email);
+        if (!existingUser) {
+          acc.push(user);
+        } else {
+          console.log(`Skipping duplicate user with email: ${user.email}, id: ${user.id}`);
+        }
+        return acc;
+      }, []);
+
+      setUsers(uniqueUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load users');
@@ -164,6 +176,12 @@ const EnhancedUserManagement = () => {
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Never';
     return new Date(dateString).toLocaleDateString();
+  };
+
+  const getDisplayName = (user: User) => {
+    if (user.full_name) return user.full_name;
+    // Fallback to email prefix (before @)
+    return user.email?.split('@')[0] || 'Unknown User';
   };
 
   if (loading) {
@@ -269,7 +287,7 @@ const EnhancedUserManagement = () => {
                   <TableRow key={user.id}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{user.full_name || 'No name'}</div>
+                        <div className="font-medium">{getDisplayName(user)}</div>
                         <div className="text-sm text-muted-foreground">{user.email}</div>
                       </div>
                     </TableCell>

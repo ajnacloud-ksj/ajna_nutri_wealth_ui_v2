@@ -9,12 +9,7 @@ import { Users, DollarSign, MessageSquare, Settings } from "lucide-react";
 
 const AdminDashboard = () => {
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-2">Manage users, costs, prompts, and system configuration</p>
-      </div>
-
+    <div className="space-y-6">
       <Tabs defaultValue="users" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="users" className="flex items-center gap-2">

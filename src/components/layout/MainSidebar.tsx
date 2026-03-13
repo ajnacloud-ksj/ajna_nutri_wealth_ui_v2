@@ -10,7 +10,8 @@ import {
   CreditCard,
   LogOut,
   Home,
-  Shield
+  Shield,
+  GitCompare
 } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
@@ -95,7 +96,8 @@ export const MainSidebar = () => {
     { name: "Food", href: "/food", icon: Utensils },
     { name: "Receipts", href: "/receipts", icon: FileText },
     { name: "Workouts", href: "/workouts", icon: Dumbbell },
-    { name: "Insights", href: "/insights", icon: BarChart3 },
+    { name: "Finance", href: "/insights", icon: BarChart3 },
+    { name: "Reconciliation", href: "/reconciliation", icon: GitCompare },
   ];
 
   // Only show billing if user is not subscribed or needs to manage subscription

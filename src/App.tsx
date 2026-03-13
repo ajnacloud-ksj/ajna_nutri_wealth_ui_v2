@@ -30,6 +30,7 @@ import Queue from "./pages/Queue";
 import Admin from "./pages/Admin";
 import Insights from "./pages/Insights";
 import Billing from "./pages/Billing";
+import Reconciliation from "./pages/Reconciliation";
 import NotFound from "./pages/NotFound";
 
 // Route components
@@ -88,6 +89,7 @@ function App() {
                       {/* Analytics & Settings */}
                       <Route path="/insights" element={<PrivateRoute><Insights /></PrivateRoute>} />
                       <Route path="/billing" element={<PrivateRoute><Billing /></PrivateRoute>} />
+                      <Route path="/reconciliation" element={<PrivateRoute><Reconciliation /></PrivateRoute>} />
 
                       {/* Admin */}
                       <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />

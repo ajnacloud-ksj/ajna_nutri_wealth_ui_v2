@@ -60,7 +60,7 @@ const CaretakerSidebar = ({ onItemClick }: CaretakerSidebarProps) => {
     { name: "Food Entries", href: "/caretaker/food", icon: Utensils },
     { name: "Receipts", href: "/caretaker/receipts", icon: FileText },
     { name: "Workouts", href: "/caretaker/workouts", icon: Dumbbell },
-    { name: "Insights", href: "/caretaker/insights", icon: BarChart3 },
+    { name: "Finance", href: "/caretaker/insights", icon: BarChart3 },
   ];
 
   return (

@@ -31,7 +31,7 @@ const navigationItems = [
   { name: "Food", href: "/food", icon: Utensils },
   { name: "Receipts", href: "/receipts", icon: FileText },
   { name: "Workouts", href: "/workouts", icon: Dumbbell },
-  { name: "Insights", href: "/insights", icon: BarChart3 },
+  { name: "Finance", href: "/insights", icon: BarChart3 },
 ];
 
 const careItems = [

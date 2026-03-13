@@ -66,7 +66,7 @@ const CostAnalytics = () => {
 
       // Fetch cost entries with user info
       const { data: costData } = await backendApi
-        .from('api_costs')
+        .from('app_api_costs')
         .select(`
           *,
           users:user_id (email, full_name)
@@ -95,9 +95,9 @@ const CostAnalytics = () => {
           .map(cost => ({
             id: cost.user_id,
             email: cost.users!.email,
-            name: cost.users!.full_name || cost.users!.email
+            name: cost.users!.full_name || cost.users!.email.split('@')[0]
           }))
-          .filter((user, index, self) => 
+          .filter((user, index, self) =>
             self.findIndex(u => u.id === user.id) === index
           );
 
@@ -189,6 +189,17 @@ const CostAnalytics = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
+  };
+
+  const getDisplayName = (cost: CostEntry) => {
+    if (cost.users?.full_name) return cost.users.full_name;
+    if (cost.users?.email) return cost.users.email.split('@')[0];
+    // Fallback to showing the user_id (truncated if it's a UUID)
+    return cost.user_id?.slice(0, 8) || 'Unknown';
+  };
+
+  const getDisplayEmail = (cost: CostEntry) => {
+    return cost.users?.email || cost.user_id || 'Unknown';
   };
 
   const clearFilters = () => {
@@ -367,8 +378,8 @@ const CostAnalytics = () => {
                 <TableRow key={cost.id}>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{cost.users?.full_name || 'Unknown'}</div>
-                      <div className="text-sm text-gray-500">{cost.users?.email || 'Unknown'}</div>
+                      <div className="font-medium">{getDisplayName(cost)}</div>
+                      <div className="text-sm text-gray-500">{getDisplayEmail(cost)}</div>
                     </div>
                   </TableCell>
                   <TableCell>

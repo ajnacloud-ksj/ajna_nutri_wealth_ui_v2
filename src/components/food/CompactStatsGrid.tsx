@@ -19,6 +19,12 @@ export const CompactStatsGrid = ({
   isFiltered = false,
   originalCount = 0
 }: CompactStatsGridProps) => {
+  // Ensure all values are valid numbers
+  const safeEntries = totalEntries ?? 0;
+  const safeCalories = isNaN(totalCalories) || totalCalories === null || totalCalories === undefined ? 0 : totalCalories;
+  const safeAvgCalories = isNaN(avgCalories) || avgCalories === null || avgCalories === undefined ? 0 : avgCalories;
+  const safeVegPercentage = isNaN(overallVegPercentage) || overallVegPercentage === null || overallVegPercentage === undefined ? 0 : overallVegPercentage;
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       <Card className="bg-gradient-to-br from-orange-500 to-red-500 text-white border-0 shadow-md">
@@ -27,8 +33,8 @@ export const CompactStatsGrid = ({
             <div>
               <p className="text-orange-100 text-xs font-medium">Total Entries</p>
               <p className="text-xl font-bold">
-                {totalEntries}
-                {isFiltered && (
+                {safeEntries}
+                {isFiltered && originalCount > 0 && (
                   <span className="text-sm font-normal ml-1">/{originalCount}</span>
                 )}
               </p>
@@ -43,7 +49,7 @@ export const CompactStatsGrid = ({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-xs font-medium">Total Calories</p>
-              <p className="text-xl font-bold">{isNaN(totalCalories) ? 0 : Math.round(totalCalories).toLocaleString()}</p>
+              <p className="text-xl font-bold">{Math.round(safeCalories).toLocaleString()}</p>
             </div>
             <Zap className="h-6 w-6 text-blue-200" />
           </div>
@@ -55,7 +61,7 @@ export const CompactStatsGrid = ({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-xs font-medium">Avg Calories</p>
-              <p className="text-xl font-bold">{isNaN(avgCalories) ? 0 : avgCalories}</p>
+              <p className="text-xl font-bold">{Math.round(safeAvgCalories).toLocaleString()}</p>
             </div>
             <TrendingUp className="h-6 w-6 text-green-200" />
           </div>
@@ -67,7 +73,7 @@ export const CompactStatsGrid = ({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-emerald-100 text-xs font-medium">Plant-Based</p>
-              <p className="text-xl font-bold">{overallVegPercentage}%</p>
+              <p className="text-xl font-bold">{Math.round(safeVegPercentage)}%</p>
             </div>
             <Leaf className="h-6 w-6 text-emerald-200" />
           </div>

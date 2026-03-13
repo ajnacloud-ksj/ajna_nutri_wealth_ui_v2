@@ -54,7 +54,7 @@ const PromptManager = () => {
   const fetchPrompts = async () => {
     try {
       const { data, error } = await backendApi
-        .from('prompts')
+        .from('app_prompts')
         .select('*')
         .order('category', { ascending: true });
 
@@ -75,7 +75,7 @@ const PromptManager = () => {
       if (editingId) {
         // Update existing prompt
         const { error } = await backendApi
-          .from('prompts')
+          .from('app_prompts')
           .update(dataToSave)
           .eq('id', editingId);
         
@@ -85,7 +85,7 @@ const PromptManager = () => {
       } else {
         // Create new prompt
         const { error } = await backendApi
-          .from('prompts')
+          .from('app_prompts')
           .insert(dataToSave);
         
         if (error) throw error;
@@ -112,7 +112,7 @@ const PromptManager = () => {
     
     try {
       const { error } = await backendApi
-        .from('prompts')
+        .from('app_prompts')
         .delete()
         .eq('id', id);
       
@@ -128,7 +128,7 @@ const PromptManager = () => {
   const handleToggleActive = async (id: string, isActive: boolean) => {
     try {
       const { error } = await backendApi
-        .from('prompts')
+        .from('app_prompts')
         .update({ is_active: isActive })
         .eq('id', id);
       

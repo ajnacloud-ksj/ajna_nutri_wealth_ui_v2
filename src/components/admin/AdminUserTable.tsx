@@ -17,7 +17,7 @@ const AdminUserTable = () => {
   const fetchUsers = async () => {
     try {
       const { data, error } = await backendApi
-        .from('users')
+        .from('app_users')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -43,6 +43,12 @@ const AdminUserTable = () => {
     );
   }
 
+  const getDisplayName = (user: any) => {
+    if (user.full_name) return user.full_name;
+    // Fallback to email prefix (before @)
+    return user.email?.split('@')[0] || 'Unknown User';
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -60,7 +66,7 @@ const AdminUserTable = () => {
             <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="flex flex-col">
-                  <span className="font-medium">{user.full_name || 'No name'}</span>
+                  <span className="font-medium">{getDisplayName(user)}</span>
                   <span className="text-sm text-muted-foreground">{user.email}</span>
                   <span className="text-xs text-muted-foreground">
                     Role: {user.role} | Type: {user.user_type}

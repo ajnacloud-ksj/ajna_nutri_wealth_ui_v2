@@ -72,7 +72,7 @@ const ModelManager = () => {
   const fetchModels = async () => {
     try {
       const { data, error } = await backendApi
-        .from('models')
+        .from('app_models')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -91,7 +91,7 @@ const ModelManager = () => {
       if (editingId) {
         // Update existing model
         const { error } = await backendApi
-          .from('models')
+          .from('app_models')
           .update(formData)
           .eq('id', editingId);
         
@@ -101,7 +101,7 @@ const ModelManager = () => {
       } else {
         // Create new model
         const { error } = await backendApi
-          .from('models')
+          .from('app_models')
           .insert(formData);
         
         if (error) throw error;
@@ -122,7 +122,7 @@ const ModelManager = () => {
     
     try {
       const { error } = await backendApi
-        .from('models')
+        .from('app_models')
         .delete()
         .eq('id', id);
       
@@ -138,7 +138,7 @@ const ModelManager = () => {
   const handleToggleActive = async (id: string, isActive: boolean) => {
     try {
       const { error } = await backendApi
-        .from('models')
+        .from('app_models')
         .update({ is_active: isActive })
         .eq('id', id);
       
@@ -154,7 +154,7 @@ const ModelManager = () => {
   const handleSetDefault = async (id: string) => {
     try {
       const { error } = await backendApi
-        .from('models')
+        .from('app_models')
         .update({ is_default: true })
         .eq('id', id);
       

@@ -206,24 +206,26 @@ const Food = () => {
       }
 
       if (extractedData) {
-        // Try multiple paths for calories
-        const calories = extractedData.total_calories ||
-                        extractedData.meal_summary?.total_nutrition?.calories ||
+        // Try multiple paths for calories - check meal_summary first (most common)
+        const calories = extractedData.meal_summary?.total_nutrition?.calories ||
+                        extractedData.total_calories ||
                         extractedData.calories ||
-                        0;
+                        null;
 
-        if (calories && !isNaN(calories)) {
-          return calories;
+        if (calories !== null && !isNaN(Number(calories))) {
+          return Number(calories);
         }
       }
 
       // Fallback to direct calories field
-      return entry.calories || 0;
+      const directCalories = entry.calories;
+      return directCalories && !isNaN(Number(directCalories)) ? Number(directCalories) : 0;
     };
 
     const totalCalories = filteredEntries.reduce((sum, entry) => {
       const calories = getEntryCalories(entry);
-      return sum + (isNaN(calories) ? 0 : calories);
+      const validCalories = isNaN(calories) ? 0 : Number(calories);
+      return sum + validCalories;
     }, 0);
 
     const avgCalories = totalEntries > 0 ? Math.round(totalCalories / totalEntries) : 0;
@@ -233,7 +235,7 @@ const Food = () => {
     filteredEntries.forEach(entry => {
       const vegData = calculateVegetarianPercentage(entry);
       const entryCalories = getEntryCalories(entry);
-      const validCalories = isNaN(entryCalories) ? 0 : entryCalories;
+      const validCalories = isNaN(entryCalories) ? 0 : Number(entryCalories);
       totalFilteredCalories += validCalories;
       totalVegCalories += (validCalories * vegData.percentage) / 100;
     });
@@ -241,6 +243,8 @@ const Food = () => {
     const overallVegPercentage = totalFilteredCalories > 0
       ? Math.round((totalVegCalories / totalFilteredCalories) * 100)
       : 0;
+
+    console.log('Stats computed:', { totalEntries, totalCalories, avgCalories, overallVegPercentage });
 
     return { totalEntries, totalCalories, avgCalories, overallVegPercentage };
   }, [filteredEntries]);

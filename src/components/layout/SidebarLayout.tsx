@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserType } from "@/contexts/UserTypeContext";
 import { MainSidebar } from "./MainSidebar";
 import ModernCaretakerSidebar from "./ModernCaretakerSidebar";
+import { MobileFAB } from "./MobileFAB";
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
@@ -44,6 +45,7 @@ const SidebarLayout = ({ children }: SidebarLayoutProps) => {
             {children}
           </main>
         </SidebarInset>
+        <MobileFAB />
       </div>
     </SidebarProvider>
   );

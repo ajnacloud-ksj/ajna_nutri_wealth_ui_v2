@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useUserData } from './UserDataContext';
 import { useUserType } from './UserTypeContext';
+import { backendApi } from '@/lib/api/client';
 
 interface ParticipantData {
   id: string;
@@ -14,11 +15,13 @@ interface ParticipantData {
 interface CaretakerDataContextType {
   selectedParticipantId: string | null;
   setSelectedParticipantId: (id: string | null) => void;
+  setSelectedParticipant: (id: string) => void;
   participants: ParticipantData[];
   participantData: ParticipantData | null;
   loading: boolean;
   error: string | null;
   refreshParticipants: () => Promise<void>;
+  fetchParticipantData: (endpoint: string) => Promise<{ data: any; error: any }>;
 }
 
 const CaretakerDataContext = createContext<CaretakerDataContextType | undefined>(undefined);
@@ -66,15 +69,30 @@ export const CaretakerDataProvider: React.FC<{ children: React.ReactNode }> = ({
     await refreshData();
   };
 
+  const setSelectedParticipant = useCallback((id: string) => {
+    setSelectedParticipantId(id);
+    const participant = participants.find(p => p.id === id);
+    setParticipantData(participant || null);
+  }, [participants]);
+
+  const fetchParticipantData = useCallback(async (endpoint: string) => {
+    if (!selectedParticipantId) {
+      return { data: null, error: new Error('No participant selected') };
+    }
+    return backendApi.get(`/v1/caretaker/participants/${selectedParticipantId}/${endpoint}`);
+  }, [selectedParticipantId]);
+
   return (
     <CaretakerDataContext.Provider value={{
       selectedParticipantId,
       setSelectedParticipantId,
+      setSelectedParticipant,
       participants,
       participantData,
       loading: isLoading,
       error: dataError,
-      refreshParticipants
+      refreshParticipants,
+      fetchParticipantData
     }}>
       {children}
     </CaretakerDataContext.Provider>

@@ -11,7 +11,9 @@ import {
   LogOut,
   Home,
   Shield,
-  GitCompare
+  GitCompare,
+  Users,
+  UserPlus,
 } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
@@ -142,6 +144,50 @@ export const MainSidebar = () => {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Caretaker Section */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Caretaker
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={location.pathname === "/caretaker-settings"}
+                >
+                  <Link to="/caretaker-settings" className="flex items-center gap-3">
+                    <Shield className="h-4 w-4" />
+                    <span>Caretaker Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={location.pathname === "/caretaker" || location.pathname.startsWith("/caretaker/")}
+                >
+                  <Link to="/caretaker" className="flex items-center gap-3">
+                    <Users className="h-4 w-4" />
+                    <span>Care Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={location.pathname === "/join-caretaker"}
+                >
+                  <Link to="/join-caretaker" className="flex items-center gap-3">
+                    <UserPlus className="h-4 w-4" />
+                    <span>Join as Caretaker</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

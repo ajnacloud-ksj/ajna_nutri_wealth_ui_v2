@@ -218,9 +218,9 @@ const FoodOptimized = () => {
 
   // Calculate stats from filtered entries
   const stats = useMemo(() => {
-    const totalCalories = filteredEntries.reduce((sum, entry) => sum + (entry.calories || 0), 0);
+    const totalCalories = filteredEntries.reduce((sum, entry) => sum + (Number(entry.calories) || 0), 0);
     const avgCalories = filteredEntries.length > 0 ? totalCalories / filteredEntries.length : 0;
-    const totalProtein = filteredEntries.reduce((sum, entry) => sum + (entry.total_protein || 0), 0);
+    const totalProtein = filteredEntries.reduce((sum, entry) => sum + (Number(entry.total_protein) || 0), 0);
     const vegPercentage = calculateVegetarianPercentage(filteredEntries);
 
     return {
@@ -323,28 +323,47 @@ const FoodOptimized = () => {
         </div>
 
         {/* Stats Grid */}
-        <CompactStatsGrid stats={stats} />
+        <CompactStatsGrid
+          totalEntries={stats.totalEntries}
+          totalCalories={stats.totalCalories}
+          avgCalories={stats.avgCalories}
+          overallVegPercentage={stats.vegPercentage}
+        />
 
         {/* Filters */}
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
+        <ModernFilterBar
+          searchPlaceholder="Search food entries..."
+          searchValue={searchTerm}
+          onSearchChange={debouncedSearch}
+          sortOptions={sortOptions}
+          sortValue={sortBy}
+          onSortChange={setSortBy}
+          totalCount={foodEntries.length}
+          filteredCount={filteredEntries.length}
+          hasActiveFilters={selectedMealType !== 'all' || selectedDietType !== 'all' || !!startDate || !!endDate}
+          onClearFilters={() => {
+            setSelectedMealType('all');
+            setSelectedDietType('all');
+            setStartDate(undefined);
+            setEndDate(undefined);
+          }}
+          advancedFilters={
             <FoodAdvancedFilters
-              searchTerm={searchTerm}
-              onSearchChange={debouncedSearch}
-              sortBy={sortBy}
-              onSortChange={setSortBy}
-              sortOptions={sortOptions}
               selectedMealType={selectedMealType}
               onMealTypeChange={setSelectedMealType}
+              mealTypeCounts={{}}
               selectedDietType={selectedDietType}
               onDietTypeChange={setSelectedDietType}
+              dietTypeCounts={{}}
               startDate={startDate}
-              onStartDateChange={setStartDate}
               endDate={endDate}
-              onEndDateChange={setEndDate}
+              onDateRangeChange={(start, end) => {
+                setStartDate(start);
+                setEndDate(end);
+              }}
             />
-          </CardContent>
-        </Card>
+          }
+        />
 
         {/* Content */}
         {filteredEntries.length === 0 ? (
@@ -365,7 +384,9 @@ const FoodOptimized = () => {
             {viewMode === 'grid' ? (
               <ModernFoodGrid
                 entries={filteredEntries}
+                onView={(id) => navigate(`/food/${id}`)}
                 onDelete={deleteFoodEntry}
+                getMealTypeFromEntry={getMealTypeFromEntry}
               />
             ) : (
               <FoodTable

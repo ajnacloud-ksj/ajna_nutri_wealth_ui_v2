@@ -51,7 +51,14 @@ const Insights = lazy(() => import("./pages/Insights"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Billing = lazy(() => import("./pages/Billing"));
 const Admin = lazy(() => import("./pages/Admin"));
+const Reconciliation = lazy(() => import("./pages/Reconciliation"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+
+// Caretaker pages
+const CaretakerSettings = lazy(() => import("./pages/CaretakerSettings"));
+const CaretakerDashboard = lazy(() => import("./pages/CaretakerDashboard"));
+const CaretakerParticipantView = lazy(() => import("./pages/CaretakerParticipantView"));
+const JoinCaretaker = lazy(() => import("./pages/JoinCaretaker"));
 
 // Create QueryClient with optimized settings
 const queryClient = new QueryClient({
@@ -129,10 +136,17 @@ function AppOptimized() {
 
                         {/* Analytics & Settings */}
                         <Route path="/insights" element={<PrivateRoute><Insights /></PrivateRoute>} />
+                        <Route path="/reconciliation" element={<PrivateRoute><Reconciliation /></PrivateRoute>} />
                         <Route path="/billing" element={<PrivateRoute><Billing /></PrivateRoute>} />
 
                         {/* Admin */}
                         <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
+
+                        {/* Caretaker Access */}
+                        <Route path="/caretaker-settings" element={<PrivateRoute><CaretakerSettings /></PrivateRoute>} />
+                        <Route path="/caretaker" element={<PrivateRoute><CaretakerDashboard /></PrivateRoute>} />
+                        <Route path="/caretaker/:participantId" element={<PrivateRoute><CaretakerParticipantView /></PrivateRoute>} />
+                        <Route path="/join-caretaker" element={<PrivateRoute><JoinCaretaker /></PrivateRoute>} />
 
                         {/* 404 Catch-all route */}
                         <Route path="*" element={<NotFound />} />

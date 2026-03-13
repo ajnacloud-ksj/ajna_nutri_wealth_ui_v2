@@ -121,8 +121,25 @@ const ReceiptDetails = () => {
 
   const handleSave = async () => {
     try {
-      await backendApi.put(`/v1/app_receipts/${id}`, editedData);
-      setReceipt({ ...receipt!, ...editedData });
+      // Only send editable scalar fields to avoid sending items array / image blob
+      const updates: Record<string, any> = {};
+      const editableFields = [
+        'vendor', 'receipt_date', 'receipt_time', 'category', 'receipt_number',
+        'notes', 'tags', 'total_amount', 'subtotal', 'tax_amount', 'discount_amount',
+        'payment_method', 'card_last_digits', 'store_address', 'city', 'state', 'postal_code',
+        'purchase_channel'
+      ];
+      for (const field of editableFields) {
+        if (editedData[field] !== undefined && editedData[field] !== receipt?.[field]) {
+          updates[field] = editedData[field];
+        }
+      }
+      if (Object.keys(updates).length === 0) {
+        setEditing(false);
+        return;
+      }
+      await backendApi.put(`/v1/app_receipts/${id}`, updates);
+      setReceipt({ ...receipt!, ...updates });
       setEditing(false);
       toast.success("Receipt updated successfully");
     } catch (error: any) {

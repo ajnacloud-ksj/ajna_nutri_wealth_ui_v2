@@ -10,7 +10,7 @@ import {
   CreditCard,
   LogOut,
   Home,
-  Shield,
+  Settings,
   GitCompare,
   Users,
   UserPlus,
@@ -107,9 +107,9 @@ export const MainSidebar = () => {
     ...((!isSubscribed || isAdmin) ? [{ name: "Billing", href: "/billing", icon: CreditCard }] : []),
   ];
 
-  const adminItems = isAdmin ? [
-    { name: "Admin", href: "/admin", icon: Shield },
-  ] : [];
+  const adminItems = [
+    { name: "Settings", href: "/admin", icon: Settings },
+  ];
 
   return (
     <>
@@ -194,6 +194,7 @@ export const MainSidebar = () => {
 
         {/* Account & Admin Section */}
         {(accountItems.length > 0 || adminItems.length > 0) && (
+          /* Always show - Settings is visible for all users */
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-wider">
               Account
@@ -216,14 +217,12 @@ export const MainSidebar = () => {
                 {adminItems.map((item) => (
                   <SidebarMenuItem key={item.name}>
                     <SidebarMenuButton
-                      asChild
                       isActive={location.pathname === item.href}
+                      onClick={() => navigate(item.href)}
                     >
-                      <Link to={item.href} className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4 text-red-600" />
-                        <span className="font-medium">{item.name}</span>
-                        <Badge variant="destructive" className="ml-auto">Admin</Badge>
-                      </Link>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.name}</span>
+                      {isAdmin && <Badge variant="destructive" className="ml-auto text-xs">Admin</Badge>}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}

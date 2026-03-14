@@ -12,7 +12,6 @@ import { ProcessingIndicator } from "./ProcessingIndicator";
 import { uploadFile } from "@/utils/analysisService";
 import { useUsageCheck } from "@/hooks/useUsageCheck";
 import { useAuth } from "@/contexts/AuthContext";
-import { createPendingAnalysis } from "@/utils/pendingAnalysisService";
 import WhisperVoiceRecorder from "./WhisperVoiceRecorder";
 
 interface QuickCaptureModalProps {
@@ -79,25 +78,12 @@ export const QuickCaptureModal = ({ isOpen, onClose, onAnalysisStarted }: QuickC
         fileUrl = await uploadFile(file, user.id);
       }
 
-      setUploadProgress('Creating analysis record...');
-
-      // Step 4: Create pending analysis record
-      const pendingAnalysisId = await createPendingAnalysis(
-        user.id,
-        description || 'AI-analyzed content',
-        fileUrl
-      );
-
       setUploadProgress('Starting AI analysis...');
 
-      // Step 5: Start analysis with enhanced error handling
-      const { error: asyncError } = await backendApi.functions.invoke('async-analyze', {
-        body: {
-          pendingAnalysisId,
-          description,
-          imageUrl: fileUrl,
-          skipUsageCheck: true // Backend should skip usage check since we already did it
-        }
+      // Step 4: Submit to backend async endpoint (backend creates pending record + sends to SQS)
+      const { data: asyncData, error: asyncError } = await backendApi.post('/v1/analyze/async', {
+        description: description || 'AI-analyzed content',
+        image_url: fileUrl,
       });
 
       if (asyncError) {

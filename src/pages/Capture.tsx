@@ -13,7 +13,6 @@ import { ProcessingIndicator } from "@/components/capture/ProcessingIndicator";
 import { uploadFile } from "@/utils/analysisService";
 import { useUsageCheck } from "@/hooks/useUsageCheck";
 import { useAuth } from "@/contexts/AuthContext";
-import { createPendingAnalysis } from "@/utils/pendingAnalysisService";
 import WhisperVoiceRecorder from "@/components/capture/WhisperVoiceRecorder";
 import PullToRefresh from "@/components/pwa/PullToRefresh";
 import { useAnalysisQueue } from "@/hooks/useAnalysisQueue";

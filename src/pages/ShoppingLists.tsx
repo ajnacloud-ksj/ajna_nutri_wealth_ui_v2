@@ -275,26 +275,24 @@ const ShoppingLists = () => {
     }
   };
 
-  const prepareList = async () => {
-    if (!selectedList) return;
+  const optimizeAll = async () => {
     setPreparing(true);
     setPrepareResult(null);
     try {
-      const { data } = await backendApi.post(`/v1/shopping-lists/${selectedList.id}/prepare`);
-      if (data?.preparation) {
-        setPrepareResult(data.preparation);
-        // Update estimated total from AI result
-        if (data.preparation.estimated_total) {
-          setSelectedList((prev) => prev ? {
-            ...prev,
-            estimated_total: data.preparation.estimated_total
-          } : prev);
+      const { data } = await backendApi.post("/v1/shopping-lists/optimize");
+      if (data?.list_id) {
+        toast.success(
+          `Created "${data.list_name}" with ${data.optimized_items} items from ${data.source_lists} lists`
+        );
+        // Refresh lists and navigate to the new optimized list
+        await fetchLists();
+        await fetchListDetail(data.list_id);
+        if (data.preparation) {
+          setPrepareResult(data.preparation);
         }
-        toast.success("AI optimization complete");
-        fetchLists();
       }
     } catch (e: any) {
-      toast.error("Failed to optimize list");
+      toast.error(e?.message || "Failed to optimize");
     } finally {
       setPreparing(false);
     }
@@ -332,10 +330,27 @@ const ShoppingLists = () => {
         {/* Left Panel: Lists */}
         <div className="w-80 border-r bg-background flex flex-col shrink-0">
           <div className="p-4 border-b">
-            <h1 className="text-lg font-semibold flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
-              Shopping Lists
-            </h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-lg font-semibold flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5" />
+                Shopping Lists
+              </h1>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={optimizeAll}
+                disabled={preparing || lists.length === 0}
+                className="gap-1 text-xs h-7"
+                title="AI Optimize across all lists"
+              >
+                {preparing ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3" />
+                )}
+                Optimize
+              </Button>
+            </div>
           </div>
 
           <div className="p-3 border-b">
@@ -416,6 +431,20 @@ const ShoppingLists = () => {
                 <ShoppingCart className="h-16 w-16 mx-auto mb-4 opacity-20" />
                 <p className="text-lg font-medium">Select a list</p>
                 <p className="text-sm">or create a new one to get started</p>
+                {lists.length > 0 && (
+                  <Button
+                    onClick={optimizeAll}
+                    disabled={preparing}
+                    className="mt-4 gap-2"
+                  >
+                    {preparing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                    {preparing ? "Optimizing..." : "AI Optimize All Lists"}
+                  </Button>
+                )}
               </div>
             </div>
           ) : (
@@ -469,8 +498,8 @@ const ShoppingLists = () => {
                   </div>
                 </div>
                 <Button
-                  onClick={prepareList}
-                  disabled={preparing || items.length === 0}
+                  onClick={optimizeAll}
+                  disabled={preparing}
                   className="gap-2"
                 >
                   {preparing ? (

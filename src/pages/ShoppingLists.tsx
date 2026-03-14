@@ -128,8 +128,11 @@ const ShoppingLists = () => {
       if (data) {
         toast.success("List created");
         setNewListName("");
-        fetchLists();
-        fetchListDetail(data.id);
+        // Use the create response directly (IbexDB write may not be immediately readable)
+        const newList = { ...data, items: [] };
+        setLists((prev) => [newList, ...prev]);
+        setSelectedList(newList);
+        setPrepareResult(null);
       }
     } catch (e: any) {
       toast.error("Failed to create list");
@@ -160,7 +163,15 @@ const ShoppingLists = () => {
       if (data) {
         toast.success(`Added ${data.items?.length || 0} items`);
         setAddItemText("");
-        fetchListDetail(selectedList.id);
+        // Optimistically merge new items into selectedList
+        const newItems = data.items || [];
+        setSelectedList((prev) => prev ? {
+          ...prev,
+          items: [...(prev.items || []), ...newItems],
+          item_count: (prev.item_count || 0) + newItems.length,
+          estimated_total: (prev.estimated_total || 0) + newItems.reduce((s: number, i: any) => s + (i.estimated_price || 0), 0)
+        } : prev);
+        // Refresh list sidebar in background
         fetchLists();
       }
     } catch (e: any) {
@@ -172,24 +183,42 @@ const ShoppingLists = () => {
 
   const togglePurchased = async (item: ShoppingItem) => {
     if (!selectedList) return;
+    // Optimistic update
+    const newPurchased = !item.is_purchased;
+    setSelectedList((prev) => prev ? {
+      ...prev,
+      items: (prev.items || []).map((i) => i.id === item.id ? { ...i, is_purchased: newPurchased } : i)
+    } : prev);
     try {
       await backendApi.put(
         `/v1/shopping-lists/${selectedList.id}/items/${item.id}`,
-        { is_purchased: !item.is_purchased }
+        { is_purchased: newPurchased }
       );
-      fetchListDetail(selectedList.id);
     } catch (e: any) {
+      // Revert on failure
+      setSelectedList((prev) => prev ? {
+        ...prev,
+        items: (prev.items || []).map((i) => i.id === item.id ? { ...i, is_purchased: !newPurchased } : i)
+      } : prev);
       toast.error("Failed to update item");
     }
   };
 
   const deleteItem = async (item: ShoppingItem) => {
     if (!selectedList) return;
+    // Optimistic removal
+    setSelectedList((prev) => prev ? {
+      ...prev,
+      items: (prev.items || []).filter((i) => i.id !== item.id),
+      item_count: Math.max(0, (prev.item_count || 0) - 1),
+      estimated_total: Math.max(0, (prev.estimated_total || 0) - (item.estimated_price || 0))
+    } : prev);
     try {
       await backendApi.delete(`/v1/shopping-lists/${selectedList.id}/items/${item.id}`);
-      fetchListDetail(selectedList.id);
       fetchLists();
     } catch (e: any) {
+      // Revert on failure
+      fetchListDetail(selectedList.id);
       toast.error("Failed to delete item");
     }
   };

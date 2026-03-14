@@ -23,7 +23,7 @@ export const useEnhancedPWAUpdate = () => {
 
   // Generate dynamic cache name based on timestamp
   const getCurrentCacheName = () => {
-    return `nutriwealth-v${Date.now()}`;
+    return `aro-v${Date.now()}`;
   };
 
   const clearAllCaches = async () => {

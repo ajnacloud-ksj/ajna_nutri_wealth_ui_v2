@@ -1,8 +1,8 @@
 
 {
-  "name": "NutriWealth - Food & Wellness Tracker",
-  "short_name": "NutriWealth",
-  "description": "Track your nutrition, fitness, and wellness journey with intelligent insights",
+  "name": "Aro - AI-Powered Food & Wellness Tracker",
+  "short_name": "Aro",
+  "description": "AI-powered food analysis, receipt scanning, workout tracking, and financial insights",
   "theme_color": "#16a34a",
   "background_color": "#ffffff",
   "display": "standalone",

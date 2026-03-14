@@ -44,17 +44,17 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* NutriWealth Green Brand Colors */
-    --nutriwealth-primary: 142 71% 45%;
-    --nutriwealth-primary-hover: 142 71% 40%;
-    --nutriwealth-secondary: 142 76% 36%;
-    --nutriwealth-secondary-hover: 142 76% 31%;
-    --nutriwealth-accent: 38 92% 50%;
-    --nutriwealth-accent-hover: 38 92% 45%;
-    --nutriwealth-muted: 220 14% 96%;
-    --nutriwealth-border: 220 13% 91%;
-    --nutriwealth-surface: 142 20% 98%;
-    --nutriwealth-clinical: 142 15% 97%;
+    /* Aro Green Brand Colors */
+    --aro-primary: 142 71% 45%;
+    --aro-primary-hover: 142 71% 40%;
+    --aro-secondary: 142 76% 36%;
+    --aro-secondary-hover: 142 76% 31%;
+    --aro-accent: 38 92% 50%;
+    --aro-accent-hover: 38 92% 45%;
+    --aro-muted: 220 14% 96%;
+    --aro-border: 220 13% 91%;
+    --aro-surface: 142 20% 98%;
+    --aro-clinical: 142 15% 97%;
   }
 
   .dark {
@@ -125,7 +125,7 @@
 }
 
 @layer components {
-  /* Modern NutriWealth Design System */
+  /* Modern Aro Design System */
   .nw-page-container {
     @apply min-h-screen bg-gradient-to-br from-green-50/50 via-white to-green-50/30;
   }

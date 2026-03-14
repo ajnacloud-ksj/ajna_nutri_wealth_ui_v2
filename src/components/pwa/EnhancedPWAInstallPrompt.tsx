@@ -124,7 +124,7 @@ const EnhancedPWAInstallPrompt = () => {
   const getInstallInstructions = () => {
     if (deviceInfo.isIOS) {
       return {
-        title: 'Install NutriWealth on iOS',
+        title: 'Install Aro on iOS',
         steps: [
           'Tap the Share button',
           'Scroll down and tap "Add to Home Screen"',
@@ -134,7 +134,7 @@ const EnhancedPWAInstallPrompt = () => {
       };
     } else if (deviceInfo.isAndroid) {
       return {
-        title: 'Install NutriWealth on Android',
+        title: 'Install Aro on Android',
         steps: [
           'Tap the menu button (⋮) in your browser',
           'Select "Add to Home screen" or "Install app"',
@@ -144,7 +144,7 @@ const EnhancedPWAInstallPrompt = () => {
       };
     } else {
       return {
-        title: 'Install NutriWealth',
+        title: 'Install Aro',
         steps: [
           'Look for the install icon in your browser address bar',
           'Click it and follow the prompts',
@@ -169,7 +169,7 @@ const EnhancedPWAInstallPrompt = () => {
             <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
               <Smartphone className="h-4 w-4 text-green-600" />
             </div>
-            <CardTitle className="text-sm">Install NutriWealth</CardTitle>
+            <CardTitle className="text-sm">Install Aro</CardTitle>
           </div>
           <Button
             variant="ghost"

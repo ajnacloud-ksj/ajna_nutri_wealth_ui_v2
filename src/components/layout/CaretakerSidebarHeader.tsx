@@ -10,7 +10,7 @@ const CaretakerSidebarHeader = () => {
         <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
           <Brain className="h-5 w-5 flex-shrink-0" />
         </div>
-        <span className="group-data-[collapsible=icon]:hidden text-lg">NutriWealth</span>
+        <span className="group-data-[collapsible=icon]:hidden text-lg">Aro</span>
       </Link>
     </SidebarHeader>
   );

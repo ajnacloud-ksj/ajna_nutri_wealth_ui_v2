@@ -468,7 +468,7 @@ const CaretakerSettings = () => {
                     </div>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
                       <p className="font-medium mb-1">How to share:</p>
-                      <p>Share this code with your caretaker. They will enter it after signing in to NutriWealth to gain access to your data.</p>
+                      <p>Share this code with your caretaker. They will enter it after signing in to Aro to gain access to your data.</p>
                     </div>
                     <Button
                       variant="outline"

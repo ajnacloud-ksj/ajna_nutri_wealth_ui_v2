@@ -80,7 +80,7 @@ const PWAInstallPrompt = () => {
             <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
               <Smartphone className="h-4 w-4 text-green-600" />
             </div>
-            <CardTitle className="text-sm">Install NutriWealth</CardTitle>
+            <CardTitle className="text-sm">Install Aro</CardTitle>
           </div>
           <Button
             variant="ghost"

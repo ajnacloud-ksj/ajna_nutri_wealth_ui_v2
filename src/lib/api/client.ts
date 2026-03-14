@@ -35,7 +35,7 @@ const getApiBaseUrl = () => {
   }
 
   // Default fallback
-  return 'https://api.nutriwealth.com';
+  return 'https://api.aro.health';
 };
 
 const API_BASE_URL = getApiBaseUrl();

@@ -91,7 +91,7 @@ const Pricing = () => {
                 <Brain className="h-5 w-5 text-white" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
-                NutriWealth
+                Aro
               </span>
             </div>
             <Button onClick={() => navigate("/auth")} className="bg-green-600 hover:bg-green-700 text-white">
@@ -293,7 +293,7 @@ const Pricing = () => {
             <div className="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
               <Brain className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold">NutriWealth</span>
+            <span className="text-xl font-bold">Aro</span>
           </div>
           <p className="text-gray-400 text-sm">
             Secure • Private • Personal Wellness Management

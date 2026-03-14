@@ -142,7 +142,7 @@ const Auth = () => {
         <CardHeader className="text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <Brain className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">NutriWealth</span>
+            <span className="text-2xl font-bold text-gray-900">Aro</span>
           </div>
           <CardTitle className="flex items-center justify-center gap-2">
             {invitationCode && <UserPlus className="h-5 w-5 text-green-600" />}

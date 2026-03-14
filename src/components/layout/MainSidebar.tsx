@@ -120,7 +120,7 @@ export const MainSidebar = () => {
         <div className="flex items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2 font-bold text-white group-data-[collapsible=icon]:justify-center">
             <Brain className="h-6 w-6 flex-shrink-0" />
-            <span className="group-data-[collapsible=icon]:hidden">NutriWealth</span>
+            <span className="group-data-[collapsible=icon]:hidden">Aro</span>
           </Link>
           <PWAUpdateIcon />
         </div>

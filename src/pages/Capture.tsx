@@ -106,15 +106,22 @@ const Capture = () => {
       console.log('[Capture] Calling async endpoint: /v1/analyze/async');
 
       // Don't send user_id in body - backend gets it from auth token
-      const { data: asyncResult } = await backendApi.post('/v1/analyze/async', {
+      const asyncResponse = await backendApi.post('/v1/analyze/async', {
         description: description || 'AI-analyzed content',
         image_url: fileUrl || ''
       });
 
+      const asyncResult = asyncResponse.data;
       console.log('[Capture] Response:', asyncResult);
 
       if (!asyncResult || !asyncResult.entry_id) {
-        throw new Error(asyncResult?.error || 'Failed to start analysis - no entry ID returned');
+        // Handle rate limit (429) with a clear message
+        const errorMsg = asyncResult?.error || asyncResponse.error?.message || asyncResponse.error;
+        if (typeof errorMsg === 'string' && errorMsg.toLowerCase().includes('daily limit')) {
+          const limit = asyncResult?.daily_limit || 10;
+          throw new Error(`Daily analysis limit (${limit}) reached. Upgrade to Pro for unlimited access.`);
+        }
+        throw new Error(errorMsg || 'Analysis could not be started. Please try again.');
       }
 
       const entryId = asyncResult.entry_id;

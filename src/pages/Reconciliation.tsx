@@ -113,8 +113,9 @@ const Reconciliation = () => {
       const response = await backendApi.post('/v1/reconciliation/run', {});
       if (response.data) {
         setReconciliationResult(response.data);
-        setSummary(response.data.summary);
         toast.success("Reconciliation completed successfully");
+        // Fetch the properly-shaped summary from the dedicated endpoint
+        await fetchSummary();
       } else if (response.error) {
         throw response.error;
       }

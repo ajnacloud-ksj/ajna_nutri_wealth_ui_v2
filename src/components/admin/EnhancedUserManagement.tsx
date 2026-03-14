@@ -37,6 +37,7 @@ interface User {
   is_archived: boolean;
   created_at: string;
   updated_at: string;
+  last_active_at: string | null;
 }
 
 const EnhancedUserManagement = () => {
@@ -66,21 +67,58 @@ const EnhancedUserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      // Use admin API which returns all users including archived
-      const { data, error } = await backendApi.get('/v1/admin/users?include_deleted=true&limit=100');
 
-      if (error) throw error;
+      // Fetch users and activity data in parallel
+      const [usersResponse, activityResponse] = await Promise.allSettled([
+        backendApi.get('/v1/admin/users?include_deleted=true&limit=100'),
+        backendApi.from('app_api_costs').select('user_id, created_at')
+      ]);
 
-      const userList: User[] = (data?.users || []).map((u: any) => ({
-        id: u.id,
-        email: u.email || '',
-        name: u.name || '',
-        role: u.role || 'participant',
-        subscription_tier: u.subscription_tier || 'free',
-        is_archived: u.is_archived || false,
-        created_at: u.created_at || '',
-        updated_at: u.updated_at || '',
-      }));
+      // Build last-activity map from api_costs (most recent created_at per user)
+      const lastActivityMap = new Map<string, string>();
+      if (activityResponse.status === 'fulfilled' && activityResponse.value.data) {
+        for (const entry of activityResponse.value.data) {
+          const existing = lastActivityMap.get(entry.user_id);
+          if (!existing || entry.created_at > existing) {
+            lastActivityMap.set(entry.user_id, entry.created_at);
+          }
+        }
+      }
+
+      let userList: User[] = [];
+
+      if (usersResponse.status === 'fulfilled' && !usersResponse.value.error) {
+        const data = usersResponse.value.data;
+        userList = (data?.users || []).map((u: any) => ({
+          id: u.id,
+          email: u.email || '',
+          name: u.name || '',
+          role: u.role || 'participant',
+          subscription_tier: u.subscription_tier || 'free',
+          is_archived: u.is_archived || false,
+          created_at: u.created_at || '',
+          updated_at: u.updated_at || '',
+          last_active_at: lastActivityMap.get(u.id) || null,
+        }));
+      } else {
+        // Fallback to generic data API
+        const { data } = await backendApi
+          .from('app_users_v4')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        userList = (data || []).map((u: any) => ({
+          id: u.id,
+          email: u.email || '',
+          name: u.name || '',
+          role: u.role || 'participant',
+          subscription_tier: u.subscription_tier || 'free',
+          is_archived: u._deleted || false,
+          created_at: u.created_at || '',
+          updated_at: u.updated_at || '',
+          last_active_at: lastActivityMap.get(u.id) || null,
+        }));
+      }
 
       // Deduplicate by email - keep the most recent
       const seen = new Map<string, User>();
@@ -94,35 +132,7 @@ const EnhancedUserManagement = () => {
       setUsers(Array.from(seen.values()));
     } catch (error) {
       console.error('Error fetching users:', error);
-      // Fallback to generic data API
-      try {
-        const { data } = await backendApi
-          .from('app_users_v4')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        const userList: User[] = (data || []).map((u: any) => ({
-          id: u.id,
-          email: u.email || '',
-          name: u.name || '',
-          role: u.role || 'participant',
-          subscription_tier: u.subscription_tier || 'free',
-          is_archived: u._deleted || false,
-          created_at: u.created_at || '',
-          updated_at: u.updated_at || '',
-        }));
-
-        const seen = new Map<string, User>();
-        for (const user of userList) {
-          const key = user.email || user.id;
-          if (!seen.has(key)) {
-            seen.set(key, user);
-          }
-        }
-        setUsers(Array.from(seen.values()));
-      } catch {
-        toast.error('Failed to load users');
-      }
+      toast.error('Failed to load users');
     } finally {
       setLoading(false);
     }
@@ -156,16 +166,13 @@ const EnhancedUserManagement = () => {
   const updateUser = async (userId: string, role: string, subscription: string) => {
     setUpdating(true);
     try {
-      // Update role via admin API
-      const { error: roleError } = await backendApi.put(`/v1/admin/users/${userId}/role`, { role });
-      if (roleError) throw roleError;
-
-      // Update subscription tier via generic data API
-      const { error: subError } = await backendApi
-        .from('app_users_v4')
-        .update({ subscription_tier: subscription })
-        .eq('id', userId);
-      if (subError) throw subError;
+      // Update role and subscription via generic data PUT endpoint
+      // PUT /v1/app_users_v4/{id} — the backend's generic update handler
+      const { error } = await backendApi.put(`/v1/app_users_v4/${userId}`, {
+        role,
+        subscription_tier: subscription
+      });
+      if (error) throw error;
 
       toast.success(`User updated: role=${role}, tier=${subscription}`);
       await fetchUsers();
@@ -357,8 +364,8 @@ const EnhancedUserManagement = () => {
                     </TableCell>
                     <TableCell>{formatDate(user.created_at)}</TableCell>
                     <TableCell>
-                      <span title={user.updated_at || ''}>
-                        {formatLastActive(user.updated_at)}
+                      <span title={user.last_active_at || user.updated_at || ''}>
+                        {formatLastActive(user.last_active_at || user.updated_at)}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">

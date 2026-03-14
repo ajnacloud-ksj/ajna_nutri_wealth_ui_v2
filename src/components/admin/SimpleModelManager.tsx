@@ -50,10 +50,11 @@ const USE_CASE_META: Record<string, { label: string; icon: any; color: string }>
 };
 
 interface ApiKeyInfo {
-  env_var: string;
+  key_name: string;
   provider: string;
   is_set: boolean;
   masked_value: string;
+  source: string;
 }
 
 const SimpleModelManager = () => {
@@ -312,7 +313,7 @@ const SimpleModelManager = () => {
           ) : (
             <>
               {apiKeys.map((keyInfo) => (
-                <div key={keyInfo.env_var} className="flex items-center gap-3 p-3 border rounded-lg">
+                <div key={keyInfo.key_name} className="flex items-center gap-3 p-3 border rounded-lg">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">{keyInfo.provider}</span>
@@ -328,29 +329,29 @@ const SimpleModelManager = () => {
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground font-mono mt-1">
-                      {keyInfo.env_var}
-                      {keyInfo.is_set && !keyEdits[keyInfo.env_var] && (
+                      {keyInfo.key_name}
+                      {keyInfo.is_set && !keyEdits[keyInfo.key_name] && (
                         <span className="ml-2 text-gray-400">
-                          {showKey[keyInfo.env_var] ? keyInfo.masked_value : '••••••••'}
+                          {showKey[keyInfo.key_name] ? keyInfo.masked_value : '••••••••'}
                         </span>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {keyInfo.is_set && !keyEdits[keyInfo.env_var] && (
+                    {keyInfo.is_set && !keyEdits[keyInfo.key_name] && (
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => setShowKey(prev => ({ ...prev, [keyInfo.env_var]: !prev[keyInfo.env_var] }))}
+                        onClick={() => setShowKey(prev => ({ ...prev, [keyInfo.key_name]: !prev[keyInfo.key_name] }))}
                       >
-                        {showKey[keyInfo.env_var] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showKey[keyInfo.key_name] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     )}
                     <Input
                       type="password"
                       placeholder={keyInfo.is_set ? "Enter new key to update..." : "Enter API key..."}
-                      value={keyEdits[keyInfo.env_var] || ''}
-                      onChange={(e) => setKeyEdits(prev => ({ ...prev, [keyInfo.env_var]: e.target.value }))}
+                      value={keyEdits[keyInfo.key_name] || ''}
+                      onChange={(e) => setKeyEdits(prev => ({ ...prev, [keyInfo.key_name]: e.target.value }))}
                       className="w-64 text-sm font-mono"
                     />
                   </div>
@@ -369,9 +370,9 @@ const SimpleModelManager = () => {
                 </div>
               )}
 
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-xs text-amber-700">
-                  API keys are stored as Lambda environment variables. Updating a key will trigger a Lambda cold start on the next invocation.
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-700">
+                  API keys are stored in IbexDB and loaded into memory on Lambda cold start. Updates take effect immediately for the current container and on next cold start for new containers.
                 </p>
               </div>
             </>

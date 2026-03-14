@@ -28,9 +28,7 @@ export const useOptimizedUserAnalytics = () => {
 
       // Step 1: Get ALL users first
       console.log('Step 1: Fetching all users...');
-      // Step 1: Get ALL users first
-      console.log('Step 1: Fetching all users...');
-      const { data: usersWithMetrics, error: usersError } = await backendApi.from('users').select();
+      const { data: usersWithMetrics, error: usersError } = await backendApi.from('app_users_v4').select();
 
       if (usersWithMetrics) {
         usersWithMetrics.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -62,9 +60,7 @@ export const useOptimizedUserAnalytics = () => {
 
       // Step 2: Get analysis data for all users
       console.log('Step 2: Fetching analysis data...');
-      // Step 2: Get analysis data for all users
-      console.log('Step 2: Fetching analysis data...');
-      const { data: rawAnalysisData, error: analysisError } = await backendApi.from('api_costs').select();
+      const { data: rawAnalysisData, error: analysisError } = await backendApi.from('app_api_costs').select();
 
       const analysisData = rawAnalysisData ? rawAnalysisData.filter((a: any) => userIds.includes(a.user_id)) : [];
 
@@ -76,9 +72,7 @@ export const useOptimizedUserAnalytics = () => {
 
       // Step 3: Get billing data
       console.log('Step 3: Fetching billing data...');
-      // Step 3: Get billing data
-      console.log('Step 3: Fetching billing data...');
-      const { data: rawBillingData, error: billingError } = await backendApi.from('api_usage_log').select();
+      const { data: rawBillingData, error: billingError } = await backendApi.from('app_api_usage_log').select();
 
       const billingData = rawBillingData ? rawBillingData.filter((b: any) => userIds.includes(b.user_id)) : [];
 
@@ -154,7 +148,7 @@ export const useOptimizedUserAnalytics = () => {
         user.lastActive && new Date(user.lastActive) >= thirtyDaysAgo
       ).length;
       const usersAnalysesToday = combinedData.filter(user => user.todayAnalyses > 0).length;
-      const totalSubscribedUsers = combinedData.filter(user => user.is_subscribed).length;
+      const totalSubscribedUsers = combinedData.filter(user => user.subscription_tier === 'pro').length;
       const totalAnalysesAll = combinedData.reduce((sum, user) => sum + user.totalAnalyses, 0);
       const averageAnalysesPerUser = totalUsers > 0 ? totalAnalysesAll / totalUsers : 0;
 

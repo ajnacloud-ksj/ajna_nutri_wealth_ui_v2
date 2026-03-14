@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 
 interface UserData {
-  is_subscribed: boolean;
+  subscription_tier: string | null;
   subscription_id: string | null;
   email: string;
 }
@@ -46,15 +46,15 @@ const Billing = () => {
       }
 
       // Fetch user subscription status
-      const { data: allUsers } = await backendApi.from('users').select();
+      const { data: allUsers } = await backendApi.from('app_users_v4').select();
       const userInfo = allUsers?.find((u: any) => u.id === user.id);
 
       // Fetch today's usage
       const today = new Date().toISOString().split('T')[0];
-      const { data: allUsage } = await backendApi.from('api_usage_log').select();
+      const { data: allUsage } = await backendApi.from('app_api_usage_log').select();
       const usage = allUsage?.find((u: any) => u.user_id === user.id && u.usage_date === today);
 
-      setUserData(userInfo || { is_subscribed: false, subscription_id: null, email: user.email || '' });
+      setUserData(userInfo || { subscription_tier: null, subscription_id: null, email: user.email || '' });
       setUsageToday(usage?.usage_count || 0);
     } catch (error: any) {
       console.error('Error fetching user data:', error);
@@ -144,7 +144,7 @@ const Billing = () => {
       buttonText: "Current Plan",
       buttonVariant: "outline" as const,
       popular: false,
-      current: !userData?.is_subscribed,
+      current: userData?.subscription_tier !== 'pro',
       priceId: null
     },
     {
@@ -162,10 +162,10 @@ const Billing = () => {
         "Priority support"
       ],
       limitations: [],
-      buttonText: userData?.is_subscribed ? "Current Plan" : "Upgrade to Pro",
-      buttonVariant: userData?.is_subscribed ? "outline" as const : "default" as const,
+      buttonText: userData?.subscription_tier === 'pro' ? "Current Plan" : "Upgrade to Pro",
+      buttonVariant: userData?.subscription_tier === 'pro' ? "outline" as const : "default" as const,
       popular: true,
-      current: userData?.is_subscribed || false,
+      current: userData?.subscription_tier === 'pro',
       priceId: "price_pro_monthly" // Replace with your actual Stripe price ID
     },
     {
@@ -222,16 +222,16 @@ const Billing = () => {
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge variant={userData?.is_subscribed ? "default" : "secondary"}>
-                    {userData?.is_subscribed ? "Pro Plan" : "Free Plan"}
+                  <Badge variant={userData?.subscription_tier === 'pro' ? "default" : "secondary"}>
+                    {userData?.subscription_tier === 'pro' ? "Pro Plan" : "Free Plan"}
                   </Badge>
-                  {userData?.is_subscribed && <Star className="h-4 w-4 text-yellow-500" />}
+                  {userData?.subscription_tier === 'pro' && <Star className="h-4 w-4 text-yellow-500" />}
                 </div>
                 <p className="text-sm text-gray-600 mb-1">
                   Email: {userData?.email}
                 </p>
                 <p className="text-sm text-gray-600 mb-2">
-                  {userData?.is_subscribed
+                  {userData?.subscription_tier === 'pro'
                     ? "Unlimited AI analyses available"
                     : `${usageToday}/2 free analyses used today`}
                 </p>
@@ -245,7 +245,7 @@ const Billing = () => {
                 <Button variant="outline" onClick={checkSubscription}>
                   Refresh Status
                 </Button>
-                {userData?.is_subscribed && (
+                {userData?.subscription_tier === 'pro' && (
                   <Button
                     variant="outline"
                     onClick={handleManageSubscription}
@@ -258,7 +258,7 @@ const Billing = () => {
               </div>
             </div>
 
-            {!userData?.is_subscribed && (
+            {userData?.subscription_tier !== 'pro' && (
               <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
                 <div className="flex items-center gap-2 text-yellow-800">
                   <Zap className="h-4 w-4" />
@@ -331,7 +331,7 @@ const Billing = () => {
                     className="w-full"
                     disabled={plan.current || upgradeLoading}
                     onClick={() => {
-                      if (plan.name === 'Pro' && !userData?.is_subscribed) {
+                      if (plan.name === 'Pro' && userData?.subscription_tier !== 'pro') {
                         handleUpgrade(plan.priceId);
                       } else if (plan.name === 'Enterprise') {
                         toast.info("Enterprise sales coming soon!");

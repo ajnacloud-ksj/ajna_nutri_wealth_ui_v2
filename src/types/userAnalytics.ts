@@ -2,8 +2,8 @@
 export interface UserUsageData {
   id: string;
   email: string;
-  full_name: string | null;
-  is_subscribed: boolean;
+  name: string | null;
+  subscription_tier: string | null;
   created_at: string;
   todayAnalyses: number;
   totalAnalyses: number;

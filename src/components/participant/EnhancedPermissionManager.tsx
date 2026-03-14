@@ -63,8 +63,8 @@ const EnhancedPermissionManager = () => {
       // Get caretaker user details
       const caretakerIds = relationships.map(r => r.caretaker_id);
       const { data: caretakerUsers, error: usersError } = await backendApi
-        .from('users')
-        .select('id, email, full_name')
+        .from('app_users_v4')
+        .select('id, email, name')
         .in('id', caretakerIds);
 
       if (usersError) throw usersError;
@@ -97,7 +97,7 @@ const EnhancedPermissionManager = () => {
           id: rel.id,
           caretaker_id: rel.caretaker_id,
           caretaker_email: caretakerUser?.email || 'Unknown',
-          caretaker_name: caretakerUser?.full_name || 'Unknown',
+          caretaker_name: caretakerUser?.name || 'Unknown',
           caretaker_type: rel.caretaker_type,
           permissions: allPermissions
         };

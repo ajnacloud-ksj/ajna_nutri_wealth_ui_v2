@@ -20,7 +20,7 @@ export const useOptimizedUserFilters = (allUsers: UserUsageData[]) => {
       const search = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(user => {
         const emailMatch = user.email.toLowerCase().includes(search);
-        const nameMatch = (user.full_name || '').toLowerCase().includes(search);
+        const nameMatch = (user.name || '').toLowerCase().includes(search);
         return emailMatch || nameMatch;
       });
     }

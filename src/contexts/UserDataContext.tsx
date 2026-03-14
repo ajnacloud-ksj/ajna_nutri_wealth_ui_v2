@@ -68,7 +68,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Make all API calls in parallel to avoid duplicate requests
       const [userResult, relationshipsResult, foodResult] = await Promise.allSettled([
         // Fetch user data
-        backendApi.from('users').select('user_type, is_subscribed').eq('id', user.id).single(),
+        backendApi.from('app_users_v4').select('role, subscription_tier').eq('id', user.id).single(),
         // Fetch caretaker relationships
         backendApi.from('care_relationships').select('*').eq('caretaker_id', user.id).eq('status', 'active'),
         // Check if user has food entries
@@ -82,8 +82,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       // Process user data
       if (userResult.status === 'fulfilled' && userResult.value.data) {
-        userType = userResult.value.data.user_type || 'participant';
-        hasSubscription = userResult.value.data.is_subscribed || false;
+        userType = userResult.value.data.role === 'caretaker' ? 'caretaker' : 'participant';
+        hasSubscription = userResult.value.data.subscription_tier === 'pro';
       } else if (isLocalMode && user.id === 'local-dev-user') {
         // Local mode defaults
         userType = 'participant';
@@ -107,8 +107,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (hasActiveCaretakerRels) {
         const participantIds = caretakerRelationships.map(r => r.user_id);
         const { data: participants } = await backendApi
-          .from('users')
-          .select('id, full_name, email')
+          .from('app_users_v4')
+          .select('id, name, email')
           .in('id', participantIds);
 
         if (participants) {

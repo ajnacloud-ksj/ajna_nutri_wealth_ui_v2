@@ -24,7 +24,7 @@ export const useConnectionMonitor = () => {
   const testConnection = useCallback(async () => {
     try {
       // Simple ping to check if we can query users
-      const { data, error } = await backendApi.from('users').select();
+      const { data, error } = await backendApi.from('app_users_v4').select();
       const connected = !error;
       setSupabaseConnected(connected);
       if (connected) {

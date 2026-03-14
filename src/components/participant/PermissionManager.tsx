@@ -14,7 +14,7 @@ import type { Database } from "@/integrations/supabase/types";
 type PermissionCategory = Database['public']['Enums']['permission_category'];
 
 interface CaretakerUser {
-  full_name: string | null;
+  name: string | null;
   email: string;
 }
 
@@ -92,8 +92,8 @@ const PermissionManager = () => {
       if (relationshipsData && relationshipsData.length > 0) {
         for (const rel of relationshipsData) {
           const { data: caretakerData, error: caretakerError } = await backendApi
-            .from('users')
-            .select('full_name, email')
+            .from('app_users_v4')
+            .select('name, email')
             .eq('id', rel.caretaker_id)
             .single();
 
@@ -109,7 +109,7 @@ const PermissionManager = () => {
               caretaker_type: rel.caretaker_type,
               status: rel.status,
               caretaker: {
-                full_name: caretakerData.full_name,
+                name: caretakerData.name,
                 email: caretakerData.email
               }
             });
@@ -152,8 +152,8 @@ const PermissionManager = () => {
         if (requestsData && requestsData.length > 0) {
           for (const request of requestsData) {
             const { data: caretakerData, error: caretakerError } = await backendApi
-              .from('users')
-              .select('full_name, email')
+              .from('app_users_v4')
+              .select('name, email')
               .eq('id', request.caretaker_id)
               .single();
 
@@ -171,7 +171,7 @@ const PermissionManager = () => {
                 message: request.message,
                 created_at: request.created_at,
                 caretaker: {
-                  full_name: caretakerData.full_name,
+                  name: caretakerData.name,
                   email: caretakerData.email
                 }
               });
@@ -341,7 +341,7 @@ const PermissionManager = () => {
                       <Icon className={`h-5 w-5 ${category?.color || 'text-gray-600'}`} />
                       <div>
                         <div className="font-medium">
-                          {request.caretaker.full_name || 'Unknown User'} wants access to {category?.label || request.category}
+                          {request.caretaker.name || 'Unknown User'} wants access to {category?.label || request.category}
                         </div>
                         <div className="text-sm text-gray-500">{request.caretaker.email}</div>
                         {request.message && (
@@ -389,7 +389,7 @@ const PermissionManager = () => {
                 <div key={relationship.id} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <div className="font-medium">{relationship.caretaker.full_name || 'Unknown User'}</div>
+                      <div className="font-medium">{relationship.caretaker.name || 'Unknown User'}</div>
                       <div className="text-sm text-gray-500">{relationship.caretaker.email}</div>
                       <Badge variant="outline" className="mt-1">
                         {relationship.caretaker_type.replace('_', ' ')}
@@ -400,7 +400,7 @@ const PermissionManager = () => {
                   {/* Bulk Actions */}
                   <BulkPermissionActions
                     caretakerId={relationship.caretaker_id}
-                    caretakerName={relationship.caretaker.full_name || 'Unknown User'}
+                    caretakerName={relationship.caretaker.name || 'Unknown User'}
                     categories={categories}
                     currentPermissions={getCaretakerPermissions(relationship.caretaker_id)}
                     onPermissionsUpdated={fetchData}

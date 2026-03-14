@@ -26,19 +26,19 @@ const UserTableRow = ({ user, isExpanded, onToggleExpansion }: UserTableRowProps
         </TableCell>
         <TableCell>
           <div>
-            <div className="font-medium">{user.full_name || 'Unknown'}</div>
+            <div className="font-medium">{user.name || 'Unknown'}</div>
             <div className="text-sm text-gray-500">{user.email}</div>
           </div>
         </TableCell>
         <TableCell>
-          <Badge className={user.is_subscribed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-            {user.is_subscribed ? 'Pro' : 'Free'}
+          <Badge className={user.subscription_tier === 'pro' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+            {user.subscription_tier === 'pro' ? 'Pro' : 'Free'}
           </Badge>
         </TableCell>
         <TableCell>
           <div className="flex items-center gap-2">
             <span className="font-medium">{user.todayAnalyses}</span>
-            {!user.is_subscribed && user.todayAnalyses >= 2 && (
+            {user.subscription_tier !== 'pro' && user.todayAnalyses >= 2 && (
               <Badge className="bg-red-100 text-red-800 text-xs">Limit Reached</Badge>
             )}
           </div>

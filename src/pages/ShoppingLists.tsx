@@ -5,13 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose
-} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Plus, ShoppingCart, Trash2, Check, Sparkles, ChevronRight,
-  Package, DollarSign, Loader2, Send, X, CheckCircle2, Circle
+  DollarSign, Loader2, Send, CheckCircle2, Circle,
+  Store, TrendingDown, Heart, Pencil, Calendar, Clock
 } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
@@ -48,21 +46,35 @@ interface ShoppingList {
   items?: ShoppingItem[];
 }
 
+// New store-grouped purchase plan types
+interface StoreStopItem {
+  name: string;
+  quantity: number;
+  unit: string;
+  category: string;
+  estimated_price: number;
+  price_source: string;
+  last_purchased: string;
+  alternative: string;
+  notes: string;
+}
+
+interface StoreStop {
+  store_name: string;
+  store_type: string;
+  items: StoreStopItem[];
+  store_subtotal: number;
+  item_count: number;
+  why_this_store: string;
+}
+
 interface PrepareResult {
-  optimized_items: {
-    name: string;
-    quantity: number;
-    unit: string;
-    category: string;
-    estimated_price: number;
-    store_recommendation: string;
-    price_note: string;
-    alternative: string;
-    nutrition_note: string;
-  }[];
+  store_stops: StoreStop[];
   estimated_total: number;
+  potential_savings: number;
   budget_tips: string[];
-  nutrition_summary: string;
+  nutrition_notes: string[];
+  summary: string;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -81,6 +93,23 @@ const CATEGORY_COLORS: Record<string, string> = {
   other: "bg-neutral-100 text-neutral-700",
 };
 
+const STORE_TYPE_ICONS: Record<string, string> = {
+  grocery: "bg-green-50 text-green-600 border-green-200",
+  wholesale: "bg-blue-50 text-blue-600 border-blue-200",
+  pharmacy: "bg-pink-50 text-pink-600 border-pink-200",
+  specialty: "bg-purple-50 text-purple-600 border-purple-200",
+  convenience: "bg-orange-50 text-orange-600 border-orange-200",
+  online: "bg-cyan-50 text-cyan-600 border-cyan-200",
+  other: "bg-gray-50 text-gray-600 border-gray-200",
+};
+
+/** IbexDB may return booleans as strings */
+function toBool(val: any): boolean {
+  if (typeof val === "boolean") return val;
+  if (typeof val === "string") return val.toLowerCase() === "true";
+  return Boolean(val);
+}
+
 const ShoppingLists = () => {
   const { user } = useAuth();
   const [lists, setLists] = useState<ShoppingList[]>([]);
@@ -92,10 +121,16 @@ const ShoppingLists = () => {
   const [addingItems, setAddingItems] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [prepareResult, setPrepareResult] = useState<PrepareResult | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState("");
 
   useEffect(() => {
     fetchLists();
   }, []);
+
+  /** Normalize is_purchased from IbexDB (may be string "false") */
+  const normalizeItems = (items: ShoppingItem[]): ShoppingItem[] =>
+    items.map((i) => ({ ...i, is_purchased: toBool(i.is_purchased) }));
 
   const fetchLists = async () => {
     try {
@@ -112,6 +147,7 @@ const ShoppingLists = () => {
     try {
       const { data } = await backendApi.get(`/v1/shopping-lists/${listId}`);
       if (data) {
+        data.items = normalizeItems(data.items || []);
         setSelectedList(data);
         setPrepareResult(null);
       }
@@ -128,7 +164,6 @@ const ShoppingLists = () => {
       if (data) {
         toast.success("List created");
         setNewListName("");
-        // Use the create response directly (IbexDB write may not be immediately readable)
         const newList = { ...data, items: [] };
         setLists((prev) => [newList, ...prev]);
         setSelectedList(newList);
@@ -152,6 +187,27 @@ const ShoppingLists = () => {
     }
   };
 
+  const renameList = async () => {
+    if (!selectedList || !editNameValue.trim()) return;
+    const newName = editNameValue.trim();
+    if (newName === selectedList.name) {
+      setEditingName(false);
+      return;
+    }
+    // Optimistic update
+    setSelectedList((prev) => prev ? { ...prev, name: newName } : prev);
+    setLists((prev) => prev.map((l) => l.id === selectedList.id ? { ...l, name: newName } : l));
+    setEditingName(false);
+    try {
+      await backendApi.put(`/v1/shopping-lists/${selectedList.id}`, { name: newName });
+    } catch (e: any) {
+      // Revert
+      setSelectedList((prev) => prev ? { ...prev, name: selectedList.name } : prev);
+      setLists((prev) => prev.map((l) => l.id === selectedList.id ? { ...l, name: selectedList.name } : l));
+      toast.error("Failed to rename list");
+    }
+  };
+
   const addItems = async () => {
     if (!addItemText.trim() || !selectedList) return;
     setAddingItems(true);
@@ -163,15 +219,13 @@ const ShoppingLists = () => {
       if (data) {
         toast.success(`Added ${data.items?.length || 0} items`);
         setAddItemText("");
-        // Optimistically merge new items into selectedList
-        const newItems = data.items || [];
+        const newItems = normalizeItems(data.items || []);
         setSelectedList((prev) => prev ? {
           ...prev,
           items: [...(prev.items || []), ...newItems],
           item_count: (prev.item_count || 0) + newItems.length,
-          estimated_total: (prev.estimated_total || 0) + newItems.reduce((s: number, i: any) => s + (i.estimated_price || 0), 0)
+          estimated_total: (prev.estimated_total || 0) + newItems.reduce((s: number, i: any) => s + (i.estimated_price || 0) * (i.quantity || 1), 0)
         } : prev);
-        // Refresh list sidebar in background
         fetchLists();
       }
     } catch (e: any) {
@@ -183,8 +237,8 @@ const ShoppingLists = () => {
 
   const togglePurchased = async (item: ShoppingItem) => {
     if (!selectedList) return;
-    // Optimistic update
     const newPurchased = !item.is_purchased;
+    // Optimistic update
     setSelectedList((prev) => prev ? {
       ...prev,
       items: (prev.items || []).map((i) => i.id === item.id ? { ...i, is_purchased: newPurchased } : i)
@@ -206,18 +260,16 @@ const ShoppingLists = () => {
 
   const deleteItem = async (item: ShoppingItem) => {
     if (!selectedList) return;
-    // Optimistic removal
     setSelectedList((prev) => prev ? {
       ...prev,
       items: (prev.items || []).filter((i) => i.id !== item.id),
       item_count: Math.max(0, (prev.item_count || 0) - 1),
-      estimated_total: Math.max(0, (prev.estimated_total || 0) - (item.estimated_price || 0))
+      estimated_total: Math.max(0, (prev.estimated_total || 0) - (item.estimated_price || 0) * (item.quantity || 1))
     } : prev);
     try {
       await backendApi.delete(`/v1/shopping-lists/${selectedList.id}/items/${item.id}`);
       fetchLists();
     } catch (e: any) {
-      // Revert on failure
       fetchListDetail(selectedList.id);
       toast.error("Failed to delete item");
     }
@@ -231,6 +283,13 @@ const ShoppingLists = () => {
       const { data } = await backendApi.post(`/v1/shopping-lists/${selectedList.id}/prepare`);
       if (data?.preparation) {
         setPrepareResult(data.preparation);
+        // Update estimated total from AI result
+        if (data.preparation.estimated_total) {
+          setSelectedList((prev) => prev ? {
+            ...prev,
+            estimated_total: data.preparation.estimated_total
+          } : prev);
+        }
         toast.success("AI optimization complete");
         fetchLists();
       }
@@ -245,7 +304,7 @@ const ShoppingLists = () => {
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount || 0);
 
   const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
   if (loading) {
     return (
@@ -259,6 +318,7 @@ const ShoppingLists = () => {
 
   const items = selectedList?.items || [];
   const purchasedCount = items.filter((i) => i.is_purchased).length;
+  const estimatedTotal = items.reduce((sum, i) => sum + (i.estimated_price || 0) * (i.quantity || 1), 0);
   const groupedItems = items.reduce<Record<string, ShoppingItem[]>>((acc, item) => {
     const cat = item.category || "other";
     if (!acc[cat]) acc[cat] = [];
@@ -278,7 +338,6 @@ const ShoppingLists = () => {
             </h1>
           </div>
 
-          {/* Create new list */}
           <div className="p-3 border-b">
             <div className="flex gap-2">
               <Input
@@ -294,7 +353,6 @@ const ShoppingLists = () => {
             </div>
           </div>
 
-          {/* List items */}
           <div className="flex-1 overflow-y-auto">
             {lists.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground text-sm">
@@ -324,6 +382,9 @@ const ShoppingLists = () => {
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                         <span>{list.item_count} items</span>
                         <span>{formatCurrency(list.estimated_total)}</span>
+                        {list.updated_at && (
+                          <span className="text-[10px]">{formatDate(list.updated_at)}</span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -362,12 +423,48 @@ const ShoppingLists = () => {
               {/* Header */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold">{selectedList.name}</h2>
+                  {editingName ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editNameValue}
+                        onChange={(e) => setEditNameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") renameList();
+                          if (e.key === "Escape") setEditingName(false);
+                        }}
+                        onBlur={renameList}
+                        autoFocus
+                        className="h-8 text-lg font-semibold w-64"
+                      />
+                    </div>
+                  ) : (
+                    <h2
+                      className="text-xl font-semibold flex items-center gap-2 cursor-pointer group/name"
+                      onClick={() => { setEditNameValue(selectedList.name); setEditingName(true); }}
+                    >
+                      {selectedList.name}
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover/name:opacity-100 transition-opacity" />
+                    </h2>
+                  )}
                   <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                     <span>{items.length} items</span>
-                    <span>{formatCurrency(selectedList.estimated_total)}</span>
+                    <span className="font-medium text-foreground">{formatCurrency(estimatedTotal)}</span>
                     {items.length > 0 && (
                       <span>{purchasedCount}/{items.length} purchased</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                    {selectedList.created_at && (
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Created {formatDate(selectedList.created_at)}
+                      </span>
+                    )}
+                    {selectedList.updated_at && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Updated {formatDate(selectedList.updated_at)}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -491,17 +588,111 @@ const ShoppingLists = () => {
                 </div>
               )}
 
-              {/* AI Optimization Results */}
+              {/* AI Optimization Results — Store-Grouped Purchase Plan */}
               {prepareResult && (
                 <>
                   <Separator />
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Sparkles className="h-5 w-5 text-amber-500" />
-                      AI Recommendations
-                    </h3>
+                  <div className="space-y-5">
+                    {/* Plan Header */}
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-amber-500" />
+                        Purchase Plan
+                      </h3>
+                      <div className="flex items-center gap-4">
+                        {prepareResult.potential_savings > 0 && (
+                          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1">
+                            <TrendingDown className="h-3 w-3" />
+                            Save {formatCurrency(prepareResult.potential_savings)}
+                          </Badge>
+                        )}
+                        <span className="text-lg font-bold text-foreground">
+                          {formatCurrency(prepareResult.estimated_total)}
+                        </span>
+                      </div>
+                    </div>
 
-                    {/* Budget tips */}
+                    {/* Summary */}
+                    {prepareResult.summary && (
+                      <div className="p-4 rounded-lg bg-amber-50 border border-amber-100 text-sm text-amber-900">
+                        {prepareResult.summary}
+                      </div>
+                    )}
+
+                    {/* Store Stops */}
+                    <div className="space-y-4">
+                      {prepareResult.store_stops.map((stop, idx) => {
+                        const storeStyle = STORE_TYPE_ICONS[stop.store_type] || STORE_TYPE_ICONS.other;
+                        return (
+                          <Card key={idx} className={`border-l-4 ${storeStyle.split(" ")[2] || "border-gray-200"}`}>
+                            <CardHeader className="pb-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${storeStyle}`}>
+                                    {idx + 1}
+                                  </div>
+                                  <div>
+                                    <CardTitle className="text-base flex items-center gap-2">
+                                      <Store className="h-4 w-4" />
+                                      {stop.store_name}
+                                    </CardTitle>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      {stop.why_this_store}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <span className="font-bold tabular-nums">
+                                    {formatCurrency(stop.store_subtotal)}
+                                  </span>
+                                  <p className="text-xs text-muted-foreground">
+                                    {stop.item_count} {stop.item_count === 1 ? "item" : "items"}
+                                  </p>
+                                </div>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <div className="space-y-2">
+                                {stop.items.map((sItem, sIdx) => (
+                                  <div key={sIdx} className="flex items-start gap-3 py-2 border-t first:border-t-0 first:pt-0">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium">{sItem.name}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                          {sItem.quantity} {sItem.unit}
+                                        </span>
+                                      </div>
+                                      {sItem.notes && (
+                                        <p className="text-xs text-muted-foreground mt-0.5">{sItem.notes}</p>
+                                      )}
+                                      {sItem.alternative && (
+                                        <p className="text-xs text-blue-600 mt-0.5">
+                                          Alternative: {sItem.alternative}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                      <span className="text-sm font-medium tabular-nums">
+                                        {formatCurrency(sItem.estimated_price * sItem.quantity)}
+                                      </span>
+                                      <p className="text-[10px] text-muted-foreground">
+                                        {sItem.price_source === "receipt_history"
+                                          ? `from receipts${sItem.last_purchased !== "never" ? ` (${sItem.last_purchased})` : ""}`
+                                          : sItem.price_source === "similar_item"
+                                          ? "similar item"
+                                          : "estimated"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+
+                    {/* Budget Tips */}
                     {prepareResult.budget_tips.length > 0 && (
                       <Card>
                         <CardHeader className="pb-2">
@@ -523,62 +714,27 @@ const ShoppingLists = () => {
                       </Card>
                     )}
 
-                    {/* Nutrition summary */}
-                    {prepareResult.nutrition_summary && (
-                      <div className="p-4 rounded-lg bg-blue-50 text-sm text-blue-800">
-                        <span className="font-medium">Nutrition: </span>
-                        {prepareResult.nutrition_summary}
-                      </div>
+                    {/* Nutrition Notes */}
+                    {prepareResult.nutrition_notes && prepareResult.nutrition_notes.length > 0 && (
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Heart className="h-4 w-4 text-pink-500" />
+                            Nutrition Notes
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ul className="space-y-1.5">
+                            {prepareResult.nutrition_notes.map((note, i) => (
+                              <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                <Check className="h-3.5 w-3.5 text-pink-500 mt-0.5 shrink-0" />
+                                {note}
+                              </li>
+                            ))}
+                          </ul>
+                        </CardContent>
+                      </Card>
                     )}
-
-                    {/* Optimized items */}
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm flex items-center justify-between">
-                          <span className="flex items-center gap-2">
-                            <Package className="h-4 w-4" />
-                            Optimized Items
-                          </span>
-                          <span className="text-emerald-600 font-bold">
-                            {formatCurrency(prepareResult.estimated_total)}
-                          </span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {prepareResult.optimized_items.map((item, i) => (
-                            <div key={i} className="p-3 rounded-lg border space-y-1.5">
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-sm">{item.name}</span>
-                                <span className="text-sm tabular-nums font-medium">
-                                  {formatCurrency(item.estimated_price * item.quantity)}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>{item.quantity} {item.unit}</span>
-                                {item.store_recommendation && (
-                                  <>
-                                    <span>at</span>
-                                    <Badge variant="outline" className="text-[10px] h-4">
-                                      {item.store_recommendation}
-                                    </Badge>
-                                  </>
-                                )}
-                              </div>
-                              {item.price_note && (
-                                <p className="text-xs text-muted-foreground">{item.price_note}</p>
-                              )}
-                              {item.alternative && (
-                                <p className="text-xs text-blue-600">Alternative: {item.alternative}</p>
-                              )}
-                              {item.nutrition_note && (
-                                <p className="text-xs text-emerald-600">{item.nutrition_note}</p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
                   </div>
                 </>
               )}

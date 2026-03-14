@@ -284,12 +284,14 @@ const ShoppingLists = () => {
         toast.success(
           `Created "${data.list_name}" with ${data.optimized_items} items from ${data.source_lists} lists`
         );
-        // Refresh lists and navigate to the new optimized list
+        // Refresh lists (with retry to ensure new list appears)
         await fetchLists();
         await fetchListDetail(data.list_id);
         if (data.preparation) {
           setPrepareResult(data.preparation);
         }
+        // Re-fetch lists after detail load to ensure sidebar is up to date
+        fetchLists();
       }
     } catch (e: any) {
       toast.error(e?.message || "Failed to optimize");
@@ -317,10 +319,17 @@ const ShoppingLists = () => {
   const items = selectedList?.items || [];
   const purchasedCount = items.filter((i) => i.is_purchased).length;
   const estimatedTotal = items.reduce((sum, i) => sum + (i.estimated_price || 0) * (i.quantity || 1), 0);
+
+  // Detect if this is a store-optimized list (items have store_recommendation)
+  const hasStoreInfo = items.some((i) => i.store_recommendation && i.store_recommendation.trim() !== "");
+
+  // Group by store if optimized, otherwise by category
   const groupedItems = items.reduce<Record<string, ShoppingItem[]>>((acc, item) => {
-    const cat = item.category || "other";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
+    const key = hasStoreInfo
+      ? (item.store_recommendation?.trim() || "Other")
+      : (item.category || "other");
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
     return acc;
   }, {});
 
@@ -389,6 +398,9 @@ const ShoppingLists = () => {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
+                        {list.name?.startsWith("Optimized Plan") && (
+                          <Sparkles className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                        )}
                         <span className="font-medium text-sm truncate">{list.name}</span>
                         {list.status === "completed" && (
                           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
@@ -561,59 +573,88 @@ const ShoppingLists = () => {
                 </CardContent>
               </Card>
 
-              {/* Items by category */}
+              {/* Items grouped by store (optimized) or category (regular) */}
               {Object.keys(groupedItems).length > 0 && (
                 <div className="space-y-4">
-                  {Object.entries(groupedItems).map(([category, catItems]) => (
-                    <div key={category}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge className={`text-xs font-medium capitalize ${CATEGORY_COLORS[category] || CATEGORY_COLORS.other}`}>
-                          {category}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">{catItems.length}</span>
-                      </div>
-                      <div className="space-y-1">
-                        {catItems.map((item) => (
-                          <div
-                            key={item.id}
-                            className={`group flex items-center gap-3 p-2.5 rounded-lg bg-background border transition-colors ${
-                              item.is_purchased ? "opacity-60" : ""
-                            }`}
-                          >
-                            <button
-                              onClick={() => togglePurchased(item)}
-                              className="shrink-0"
-                            >
-                              {item.is_purchased ? (
-                                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                              ) : (
-                                <Circle className="h-5 w-5 text-muted-foreground/40 hover:text-muted-foreground" />
-                              )}
-                            </button>
-                            <div className="flex-1 min-w-0">
-                              <span className={`text-sm ${item.is_purchased ? "line-through text-muted-foreground" : ""}`}>
-                                {item.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground ml-2">
-                                {item.quantity} {item.unit}
-                              </span>
-                            </div>
-                            <span className="text-sm tabular-nums text-muted-foreground">
-                              {formatCurrency(item.estimated_price * item.quantity)}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-600"
-                              onClick={() => deleteItem(item)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                  {Object.entries(groupedItems).map(([groupKey, groupItems]) => {
+                    const groupTotal = groupItems.reduce((s, i) => s + (i.estimated_price || 0) * (i.quantity || 1), 0);
+                    return (
+                      <div key={groupKey}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {hasStoreInfo ? (
+                              <Badge className="text-xs font-medium bg-amber-50 text-amber-700 border-amber-200 gap-1">
+                                <Store className="h-3 w-3" />
+                                {groupKey}
+                              </Badge>
+                            ) : (
+                              <Badge className={`text-xs font-medium capitalize ${CATEGORY_COLORS[groupKey] || CATEGORY_COLORS.other}`}>
+                                {groupKey}
+                              </Badge>
+                            )}
+                            <span className="text-xs text-muted-foreground">{groupItems.length}</span>
                           </div>
-                        ))}
+                          {hasStoreInfo && (
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {formatCurrency(groupTotal)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          {groupItems.map((item) => (
+                            <div
+                              key={item.id}
+                              className={`group flex items-center gap-3 p-2.5 rounded-lg bg-background border transition-colors ${
+                                item.is_purchased ? "opacity-60" : ""
+                              }`}
+                            >
+                              <button
+                                onClick={() => togglePurchased(item)}
+                                className="shrink-0"
+                              >
+                                {item.is_purchased ? (
+                                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                                ) : (
+                                  <Circle className="h-5 w-5 text-muted-foreground/40 hover:text-muted-foreground" />
+                                )}
+                              </button>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-sm ${item.is_purchased ? "line-through text-muted-foreground" : ""}`}>
+                                    {item.name}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {item.quantity} {item.unit}
+                                  </span>
+                                  {!hasStoreInfo && item.store_recommendation && (
+                                    <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                                      {item.store_recommendation}
+                                    </span>
+                                  )}
+                                </div>
+                                {item.notes && (
+                                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+                                    {item.notes}
+                                  </p>
+                                )}
+                              </div>
+                              <span className="text-sm tabular-nums text-muted-foreground">
+                                {formatCurrency(item.estimated_price * item.quantity)}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-600"
+                                onClick={() => deleteItem(item)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 

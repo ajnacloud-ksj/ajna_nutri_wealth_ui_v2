@@ -4,7 +4,7 @@ import { Mic, Square, Loader2, Languages } from "lucide-react";
 import { toast } from "sonner";
 import { backendApi } from "@/lib/api/client";
 
-type VoiceEngine = "whisper" | "sarvam";
+type VoiceEngine = "groq" | "sarvam";
 
 interface WhisperVoiceRecorderProps {
   onTranscription: (text: string) => void;
@@ -13,7 +13,7 @@ interface WhisperVoiceRecorderProps {
   compact?: boolean;
   /** Seconds of silence before auto-stop (default 2s) */
   silenceTimeout?: number;
-  /** Default engine (default: "sarvam") */
+  /** Default engine (default: "groq") */
   defaultEngine?: VoiceEngine;
 }
 
@@ -27,7 +27,7 @@ const WhisperVoiceRecorder = ({
   disabled = false,
   compact = false,
   silenceTimeout = 2,
-  defaultEngine = "sarvam",
+  defaultEngine = "groq",
 }: WhisperVoiceRecorderProps) => {
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
@@ -76,7 +76,7 @@ const WhisperVoiceRecorder = ({
       }
 
       onTranscription(data.text);
-      const engineLabel = data.engine === "sarvam" ? "Sarvam" : "Whisper";
+      const engineLabel = data.engine === "sarvam" ? "Sarvam" : "Groq";
       toast.success(`${engineLabel}: "${data.text.slice(0, 60)}${data.text.length > 60 ? "..." : ""}"`);
     } catch (e: any) {
       toast.error("Transcription failed");
@@ -179,7 +179,7 @@ const WhisperVoiceRecorder = ({
       recorder.start(250);
       mediaRecorderRef.current = recorder;
       setRecording(true);
-      const engineLabel = engine === "sarvam" ? "Sarvam AI" : "Whisper";
+      const engineLabel = engine === "sarvam" ? "Sarvam AI" : "Groq Whisper";
       toast.success(`Recording (${engineLabel})... Speak now!`);
 
       startSilenceDetection(stream);
@@ -205,8 +205,8 @@ const WhisperVoiceRecorder = ({
   const toggleEngine = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (recording || transcribing) return;
-    setEngine(prev => prev === "whisper" ? "sarvam" : "whisper");
-    toast.info(`Switched to ${engine === "whisper" ? "Sarvam AI" : "Whisper"}`);
+    setEngine(prev => prev === "groq" ? "sarvam" : "groq");
+    toast.info(`Switched to ${engine === "groq" ? "Sarvam AI" : "Groq Whisper"}`);
   };
 
   if (compact) {
@@ -269,10 +269,10 @@ const WhisperVoiceRecorder = ({
         onClick={toggleEngine}
         disabled={disabled || recording || transcribing}
         className="h-8 px-2 text-xs text-muted-foreground"
-        title={`Using ${engine === "sarvam" ? "Sarvam AI Saaras" : "OpenAI Whisper"}. Click to switch.`}
+        title={`Using ${engine === "sarvam" ? "Sarvam AI Saaras" : "Groq Whisper"}. Click to switch.`}
       >
         <Languages className="h-3 w-3 mr-1" />
-        {engine === "sarvam" ? "Sarvam" : "Whisper"}
+        {engine === "sarvam" ? "Sarvam" : "Groq"}
       </Button>
     </div>
   );

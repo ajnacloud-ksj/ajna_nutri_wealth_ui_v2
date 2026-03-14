@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Users, UserCheck, UserX, Shield, ShieldOff, Search,
-  ChevronLeft, ChevronRight, Edit2, Power, UserCog
+  ChevronLeft, ChevronRight, Edit2, Power, UserCog, Crown
 } from "lucide-react";
 import { getAuthHeadersSync } from "@/lib/auth/tokenManager";
 import { backendApi } from "@/lib/api/client";
@@ -50,6 +50,7 @@ const EnhancedUserManagement = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [newRole, setNewRole] = useState<string>("");
+  const [newSubscription, setNewSubscription] = useState<string>("free");
   const [updating, setUpdating] = useState(false);
 
   const usersPerPage = 10;
@@ -112,27 +113,25 @@ const EnhancedUserManagement = () => {
     setCurrentPage(1);
   };
 
-  const updateUserRole = async (userId: string, role: string) => {
+  const updateUser = async (userId: string, role: string, subscription: string) => {
     setUpdating(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/v1/admin/users/${userId}/role`, {
-        method: 'PUT',
-        headers: {
-          ...getAuthHeadersSync()
-        },
-        body: JSON.stringify({ role })
-      });
+      // Use the generic data API to update the user record
+      const updates: Record<string, any> = { role };
+      updates.subscription_tier = subscription;
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update role');
-      }
+      const { error } = await backendApi
+        .from('app_users_v4')
+        .update(updates)
+        .eq('id', userId);
 
-      toast.success(`User role updated to ${role}`);
+      if (error) throw error;
+
+      toast.success(`User updated: role=${role}, tier=${subscription}`);
       await fetchUsers();
       setShowRoleDialog(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update user role');
+      toast.error(error.message || 'Failed to update user');
     } finally {
       setUpdating(false);
     }
@@ -299,14 +298,13 @@ const EnhancedUserManagement = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {user.is_subscribed ? (
+                        {(user as any).subscription_tier === 'pro' || user.is_subscribed ? (
                           <Badge variant="outline" className="text-green-600">
-                            <UserCheck className="h-3 w-3 mr-1" />
-                            Subscribed
+                            <Crown className="h-3 w-3 mr-1" />
+                            Pro
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-gray-500">
-                            <UserX className="h-3 w-3 mr-1" />
                             Free
                           </Badge>
                         )}
@@ -328,6 +326,7 @@ const EnhancedUserManagement = () => {
                           onClick={() => {
                             setSelectedUser(user);
                             setNewRole(user.role);
+                            setNewSubscription((user as any).subscription_tier || (user.is_subscribed ? 'pro' : 'free'));
                             setShowRoleDialog(true);
                           }}
                         >
@@ -381,32 +380,47 @@ const EnhancedUserManagement = () => {
       <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change User Role</DialogTitle>
+            <DialogTitle>Manage User</DialogTitle>
             <DialogDescription>
-              Update role for {selectedUser?.email}
+              Update role and subscription for {selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Select value={newRole} onValueChange={setNewRole}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="participant">Participant</SelectItem>
-                <SelectItem value="caretaker">Caretaker</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Role</label>
+              <Select value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin (unlimited access)</SelectItem>
+                  <SelectItem value="participant">Participant</SelectItem>
+                  <SelectItem value="caretaker">Caretaker</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Subscription Tier</label>
+              <Select value={newSubscription} onValueChange={setNewSubscription}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select tier" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free (daily limit applies)</SelectItem>
+                  <SelectItem value="pro">Pro (unlimited analyses)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRoleDialog(false)}>
               Cancel
             </Button>
             <Button
-              onClick={() => selectedUser && updateUserRole(selectedUser.id, newRole)}
-              disabled={updating || newRole === selectedUser?.role}
+              onClick={() => selectedUser && updateUser(selectedUser.id, newRole, newSubscription)}
+              disabled={updating}
             >
-              {updating ? 'Updating...' : 'Update Role'}
+              {updating ? 'Updating...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>

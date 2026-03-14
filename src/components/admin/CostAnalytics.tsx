@@ -10,6 +10,12 @@ import { DollarSign, Users, Activity, Calendar, Filter } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
 import { formatDistanceToNow } from "date-fns";
 
+interface UserInfo {
+  id: string;
+  email: string;
+  name: string;
+}
+
 interface CostEntry {
   id: string;
   user_id: string;
@@ -19,7 +25,6 @@ interface CostEntry {
   cost_usd: number;
   category: string;
   created_at: string;
-  users?: { email: string; full_name: string } | null;
 }
 
 interface CostSummary {
@@ -31,6 +36,7 @@ interface CostSummary {
 
 const CostAnalytics = () => {
   const [costs, setCosts] = useState<CostEntry[]>([]);
+  const [userMap, setUserMap] = useState<Map<string, UserInfo>>(new Map());
   const [filteredCosts, setFilteredCosts] = useState<CostEntry[]>([]);
   const [summary, setSummary] = useState<CostSummary>({
     totalCost: 0,
@@ -39,7 +45,7 @@ const CostAnalytics = () => {
     avgCostPerCall: 0
   });
   const [loading, setLoading] = useState(true);
-  
+
   // Filters
   const [selectedUser, setSelectedUser] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -48,65 +54,71 @@ const CostAnalytics = () => {
   const [searchEmail, setSearchEmail] = useState<string>("");
 
   // Unique values for filters
-  const [uniqueUsers, setUniqueUsers] = useState<Array<{id: string, email: string, name: string}>>([]);
+  const [uniqueUsers, setUniqueUsers] = useState<UserInfo[]>([]);
   const [uniqueCategories, setUniqueCategories] = useState<string[]>([]);
   const [uniqueModels, setUniqueModels] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchCostData();
+    fetchData();
   }, []);
 
   useEffect(() => {
     applyFilters();
-  }, [costs, selectedUser, selectedCategory, selectedModel, dateRange, searchEmail]);
+  }, [costs, userMap, selectedUser, selectedCategory, selectedModel, dateRange, searchEmail]);
 
-  const fetchCostData = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
 
-      // Fetch cost entries with user info
-      const { data: costData } = await backendApi
-        .from('app_api_costs')
-        .select(`
-          *,
-          users:user_id (email, full_name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(1000);
+      // Fetch costs and users in parallel
+      const [costsResult, usersResult] = await Promise.all([
+        backendApi
+          .from('app_api_costs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1000),
+        backendApi
+          .from('app_users_v4')
+          .select('id,email,name')
+          .limit(500),
+      ]);
 
-      if (costData) {
-        const validCosts: CostEntry[] = costData.map(cost => ({
+      // Build user lookup map
+      const uMap = new Map<string, UserInfo>();
+      if (usersResult.data) {
+        for (const u of usersResult.data) {
+          uMap.set(u.id, {
+            id: u.id,
+            email: u.email || '',
+            name: u.name || u.email?.split('@')[0] || '',
+          });
+        }
+      }
+      setUserMap(uMap);
+
+      if (costsResult.data) {
+        const validCosts: CostEntry[] = costsResult.data.map((cost: any) => ({
           id: cost.id,
           user_id: cost.user_id,
           function_name: cost.function_name,
           model_used: cost.model_used,
-          total_tokens: cost.total_tokens,
-          cost_usd: cost.cost_usd,
+          total_tokens: cost.total_tokens || 0,
+          cost_usd: cost.cost_usd || 0,
           category: cost.category || 'unknown',
           created_at: cost.created_at,
-          users: Array.isArray(cost.users) ? cost.users[0] : cost.users
         }));
 
         setCosts(validCosts);
 
-        // Extract unique values for filters
-        const users = validCosts
-          .filter(cost => cost.users)
-          .map(cost => ({
-            id: cost.user_id,
-            email: cost.users!.email,
-            name: cost.users!.full_name || cost.users!.email.split('@')[0]
-          }))
-          .filter((user, index, self) =>
-            self.findIndex(u => u.id === user.id) === index
-          );
-
-        const categories = [...new Set(validCosts.map(cost => cost.category))];
-        const models = [...new Set(validCosts.map(cost => cost.model_used))];
+        // Extract unique filter values using user map for display
+        const userIds = [...new Set(validCosts.map(c => c.user_id))];
+        const users: UserInfo[] = userIds
+          .map(id => uMap.get(id) || { id, email: id.slice(0, 8), name: id.slice(0, 8) })
+          .sort((a, b) => a.name.localeCompare(b.name));
 
         setUniqueUsers(users);
-        setUniqueCategories(categories);
-        setUniqueModels(models);
+        setUniqueCategories([...new Set(validCosts.map(c => c.category))]);
+        setUniqueModels([...new Set(validCosts.map(c => c.model_used))]);
       }
     } catch (error) {
       console.error('Error fetching cost data:', error);
@@ -118,26 +130,22 @@ const CostAnalytics = () => {
   const applyFilters = () => {
     let filtered = [...costs];
 
-    // User filter
     if (selectedUser !== "all") {
       filtered = filtered.filter(cost => cost.user_id === selectedUser);
     }
 
-    // Category filter
     if (selectedCategory !== "all") {
       filtered = filtered.filter(cost => cost.category === selectedCategory);
     }
 
-    // Model filter
     if (selectedModel !== "all") {
       filtered = filtered.filter(cost => cost.model_used === selectedModel);
     }
 
-    // Date range filter
     if (dateRange !== "all") {
       const now = new Date();
       let cutoffDate = new Date();
-      
+
       switch (dateRange) {
         case "today":
           cutoffDate.setHours(0, 0, 0, 0);
@@ -149,34 +157,30 @@ const CostAnalytics = () => {
           cutoffDate.setMonth(now.getMonth() - 1);
           break;
       }
-      
-      filtered = filtered.filter(cost => 
+
+      filtered = filtered.filter(cost =>
         new Date(cost.created_at) >= cutoffDate
       );
     }
 
-    // Email search filter
     if (searchEmail) {
-      filtered = filtered.filter(cost => 
-        cost.users?.email.toLowerCase().includes(searchEmail.toLowerCase()) ||
-        cost.users?.full_name?.toLowerCase().includes(searchEmail.toLowerCase())
-      );
+      const term = searchEmail.toLowerCase();
+      filtered = filtered.filter(cost => {
+        const user = userMap.get(cost.user_id);
+        if (!user) return false;
+        return user.email.toLowerCase().includes(term) ||
+               user.name.toLowerCase().includes(term);
+      });
     }
 
     setFilteredCosts(filtered);
 
-    // Calculate summary
     const totalCost = filtered.reduce((sum, cost) => sum + Number(cost.cost_usd), 0);
     const totalTokens = filtered.reduce((sum, cost) => sum + cost.total_tokens, 0);
     const totalCalls = filtered.length;
     const avgCostPerCall = totalCalls > 0 ? totalCost / totalCalls : 0;
 
-    setSummary({
-      totalCost,
-      totalTokens,
-      totalCalls,
-      avgCostPerCall
-    });
+    setSummary({ totalCost, totalTokens, totalCalls, avgCostPerCall });
   };
 
   const formatCurrency = (amount: number) => {
@@ -191,15 +195,16 @@ const CostAnalytics = () => {
     return new Date(dateString).toLocaleString();
   };
 
-  const getDisplayName = (cost: CostEntry) => {
-    if (cost.users?.full_name) return cost.users.full_name;
-    if (cost.users?.email) return cost.users.email.split('@')[0];
-    // Fallback to showing the user_id (truncated if it's a UUID)
-    return cost.user_id?.slice(0, 8) || 'Unknown';
+  const getDisplayName = (userId: string) => {
+    const user = userMap.get(userId);
+    if (user?.name) return user.name;
+    if (user?.email) return user.email.split('@')[0];
+    return userId.slice(0, 8);
   };
 
-  const getDisplayEmail = (cost: CostEntry) => {
-    return cost.users?.email || cost.user_id || 'Unknown';
+  const getDisplayEmail = (userId: string) => {
+    const user = userMap.get(userId);
+    return user?.email || userId;
   };
 
   const clearFilters = () => {
@@ -279,7 +284,7 @@ const CostAnalytics = () => {
                   <SelectItem value="all">All Users</SelectItem>
                   {uniqueUsers.map(user => (
                     <SelectItem key={user.id} value={user.id}>
-                      {user.name}
+                      {user.name} ({user.email})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -378,8 +383,8 @@ const CostAnalytics = () => {
                 <TableRow key={cost.id}>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{getDisplayName(cost)}</div>
-                      <div className="text-sm text-gray-500">{getDisplayEmail(cost)}</div>
+                      <div className="font-medium">{getDisplayName(cost.user_id)}</div>
+                      <div className="text-sm text-gray-500">{getDisplayEmail(cost.user_id)}</div>
                     </div>
                   </TableCell>
                   <TableCell>

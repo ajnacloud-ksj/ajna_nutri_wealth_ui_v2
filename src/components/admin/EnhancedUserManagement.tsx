@@ -5,12 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Users, UserCheck, UserX, Shield, ShieldOff, Search,
-  ChevronLeft, ChevronRight, Edit2, Power, UserCog, Crown
+  Users, Shield, ShieldOff, Search,
+  ChevronLeft, ChevronRight, Power, UserCog, Crown, Archive
 } from "lucide-react";
-import { getAuthHeadersSync } from "@/lib/auth/tokenManager";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -31,13 +31,12 @@ import {
 interface User {
   id: string;
   email: string;
-  full_name: string;
+  name: string;
   role: 'admin' | 'participant' | 'caretaker';
-  user_type: string;
-  is_subscribed: boolean;
-  is_active?: boolean;
+  subscription_tier: string;
+  is_archived: boolean;
   created_at: string;
-  last_usage_date?: string;
+  updated_at: string;
 }
 
 const EnhancedUserManagement = () => {
@@ -46,6 +45,7 @@ const EnhancedUserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
@@ -61,33 +61,68 @@ const EnhancedUserManagement = () => {
 
   useEffect(() => {
     filterUsers();
-  }, [users, searchTerm, roleFilter]);
+  }, [users, searchTerm, roleFilter, statusFilter]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await backendApi
-        .from('app_users_v4')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use admin API which returns all users including archived
+      const { data, error } = await backendApi.get('/v1/admin/users?include_deleted=true&limit=100');
 
       if (error) throw error;
 
-      // Deduplicate users by email - keep the most recent entry (first one due to ordering)
-      const uniqueUsers = (data || []).reduce((acc: User[], user: User) => {
-        const existingUser = acc.find(u => u.email === user.email);
-        if (!existingUser) {
-          acc.push(user);
-        } else {
-          console.log(`Skipping duplicate user with email: ${user.email}, id: ${user.id}`);
-        }
-        return acc;
-      }, []);
+      const userList: User[] = (data?.users || []).map((u: any) => ({
+        id: u.id,
+        email: u.email || '',
+        name: u.name || '',
+        role: u.role || 'participant',
+        subscription_tier: u.subscription_tier || 'free',
+        is_archived: u.is_archived || false,
+        created_at: u.created_at || '',
+        updated_at: u.updated_at || '',
+      }));
 
-      setUsers(uniqueUsers);
+      // Deduplicate by email - keep the most recent
+      const seen = new Map<string, User>();
+      for (const user of userList) {
+        const key = user.email || user.id;
+        if (!seen.has(key)) {
+          seen.set(key, user);
+        }
+      }
+
+      setUsers(Array.from(seen.values()));
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast.error('Failed to load users');
+      // Fallback to generic data API
+      try {
+        const { data } = await backendApi
+          .from('app_users_v4')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        const userList: User[] = (data || []).map((u: any) => ({
+          id: u.id,
+          email: u.email || '',
+          name: u.name || '',
+          role: u.role || 'participant',
+          subscription_tier: u.subscription_tier || 'free',
+          is_archived: u._deleted || false,
+          created_at: u.created_at || '',
+          updated_at: u.updated_at || '',
+        }));
+
+        const seen = new Map<string, User>();
+        for (const user of userList) {
+          const key = user.email || user.id;
+          if (!seen.has(key)) {
+            seen.set(key, user);
+          }
+        }
+        setUsers(Array.from(seen.values()));
+      } catch {
+        toast.error('Failed to load users');
+      }
     } finally {
       setLoading(false);
     }
@@ -96,17 +131,22 @@ const EnhancedUserManagement = () => {
   const filterUsers = () => {
     let filtered = [...users];
 
-    // Search filter
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       filtered = filtered.filter(user =>
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        user.email.toLowerCase().includes(term) ||
+        user.name?.toLowerCase().includes(term)
       );
     }
 
-    // Role filter
     if (roleFilter !== "all") {
       filtered = filtered.filter(user => user.role === roleFilter);
+    }
+
+    if (statusFilter === "active") {
+      filtered = filtered.filter(user => !user.is_archived);
+    } else if (statusFilter === "archived") {
+      filtered = filtered.filter(user => user.is_archived);
     }
 
     setFilteredUsers(filtered);
@@ -116,16 +156,16 @@ const EnhancedUserManagement = () => {
   const updateUser = async (userId: string, role: string, subscription: string) => {
     setUpdating(true);
     try {
-      // Use the generic data API to update the user record
-      const updates: Record<string, any> = { role };
-      updates.subscription_tier = subscription;
+      // Update role via admin API
+      const { error: roleError } = await backendApi.put(`/v1/admin/users/${userId}/role`, { role });
+      if (roleError) throw roleError;
 
-      const { error } = await backendApi
+      // Update subscription tier via generic data API
+      const { error: subError } = await backendApi
         .from('app_users_v4')
-        .update(updates)
+        .update({ subscription_tier: subscription })
         .eq('id', userId);
-
-      if (error) throw error;
+      if (subError) throw subError;
 
       toast.success(`User updated: role=${role}, tier=${subscription}`);
       await fetchUsers();
@@ -137,32 +177,14 @@ const EnhancedUserManagement = () => {
     }
   };
 
-  const toggleUserStatus = async (userId: string, isActive: boolean) => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/v1/admin/users/${userId}/status`, {
-        method: 'PUT',
-        headers: {
-          ...getAuthHeadersSync()
-        },
-        body: JSON.stringify({ is_active: isActive })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update status');
-      }
-
-      toast.success(`User ${isActive ? 'enabled' : 'disabled'}`);
-      await fetchUsers();
-    } catch (error) {
-      toast.error('Failed to update user status');
-    }
-  };
-
   // Pagination
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
   const startIndex = (currentPage - 1) * usersPerPage;
   const endIndex = startIndex + usersPerPage;
   const currentUsers = filteredUsers.slice(startIndex, endIndex);
+
+  const activeUsers = users.filter(u => !u.is_archived);
+  const archivedUsers = users.filter(u => u.is_archived);
 
   const getRoleBadgeColor = (role: string) => {
     switch(role) {
@@ -172,15 +194,23 @@ const EnhancedUserManagement = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString();
+  const getDisplayName = (user: User) => {
+    if (user.name) return user.name;
+    return user.email?.split('@')[0] || 'Unknown User';
   };
 
-  const getDisplayName = (user: User) => {
-    if (user.full_name) return user.full_name;
-    // Fallback to email prefix (before @)
-    return user.email?.split('@')[0] || 'Unknown User';
+  const formatLastActive = (dateString: string) => {
+    if (!dateString) return 'Never';
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch {
+      return 'Unknown';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString();
   };
 
   if (loading) {
@@ -232,6 +262,16 @@ const EnhancedUserManagement = () => {
                 <SelectItem value="caretaker">Caretakers</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Users</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* User Stats */}
@@ -252,18 +292,18 @@ const EnhancedUserManagement = () => {
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold">
-                  {users.filter(u => u.is_subscribed).length}
+                <div className="text-2xl font-bold text-green-600">
+                  {activeUsers.length}
                 </div>
-                <div className="text-sm text-muted-foreground">Subscribed</div>
+                <div className="text-sm text-muted-foreground">Active</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold">
-                  {users.filter(u => u.is_active !== false).length}
+                <div className="text-2xl font-bold text-orange-500">
+                  {archivedUsers.length}
                 </div>
-                <div className="text-sm text-muted-foreground">Active</div>
+                <div className="text-sm text-muted-foreground">Archived</div>
               </CardContent>
             </Card>
           </div>
@@ -283,7 +323,7 @@ const EnhancedUserManagement = () => {
               </TableHeader>
               <TableBody>
                 {currentUsers.map((user) => (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.id} className={user.is_archived ? 'opacity-60' : ''}>
                     <TableCell>
                       <div>
                         <div className="font-medium">{getDisplayName(user)}</div>
@@ -298,7 +338,12 @@ const EnhancedUserManagement = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {(user as any).subscription_tier === 'pro' || user.is_subscribed ? (
+                        {user.is_archived ? (
+                          <Badge variant="outline" className="text-orange-500 border-orange-300">
+                            <Archive className="h-3 w-3 mr-1" />
+                            Archived
+                          </Badge>
+                        ) : user.subscription_tier === 'pro' ? (
                           <Badge variant="outline" className="text-green-600">
                             <Crown className="h-3 w-3 mr-1" />
                             Pro
@@ -308,37 +353,31 @@ const EnhancedUserManagement = () => {
                             Free
                           </Badge>
                         )}
-                        {user.is_active === false && (
-                          <Badge variant="destructive">
-                            <ShieldOff className="h-3 w-3 mr-1" />
-                            Disabled
-                          </Badge>
-                        )}
                       </div>
                     </TableCell>
                     <TableCell>{formatDate(user.created_at)}</TableCell>
-                    <TableCell>{formatDate(user.last_usage_date || '')}</TableCell>
+                    <TableCell>
+                      <span title={user.updated_at || ''}>
+                        {formatLastActive(user.updated_at)}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setNewRole(user.role);
-                            setNewSubscription((user as any).subscription_tier || (user.is_subscribed ? 'pro' : 'free'));
-                            setShowRoleDialog(true);
-                          }}
-                        >
-                          <UserCog className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={user.is_active === false ? "default" : "outline"}
-                          onClick={() => toggleUserStatus(user.id, user.is_active === false)}
-                        >
-                          <Power className={`h-4 w-4 ${user.is_active === false ? '' : 'text-red-500'}`} />
-                        </Button>
+                        {!user.is_archived && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            title="Manage user"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setNewRole(user.role);
+                              setNewSubscription(user.subscription_tier || 'free');
+                              setShowRoleDialog(true);
+                            }}
+                          >
+                            <UserCog className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

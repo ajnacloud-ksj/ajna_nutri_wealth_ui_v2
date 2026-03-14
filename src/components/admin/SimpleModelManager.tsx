@@ -3,9 +3,19 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Settings, Bot, Mic, ShoppingCart, UtensilsCrossed, Receipt, Dumbbell, Brain } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RefreshCw, Settings, Bot, Mic, ShoppingCart, UtensilsCrossed, Receipt, Dumbbell, Brain, Edit, X, Save } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ModelConfig {
   provider: string;
@@ -16,6 +26,17 @@ interface ModelConfig {
   cost_per_1k: number;
   fallback_provider: string | null;
   fallback_model: string | null;
+}
+
+interface EditForm {
+  provider: string;
+  model_name: string;
+  temperature: number;
+  max_tokens: number;
+  timeout_seconds: number;
+  cost_per_1k_tokens: number;
+  fallback_provider: string;
+  fallback_model: string;
 }
 
 const USE_CASE_META: Record<string, { label: string; icon: any; color: string }> = {
@@ -32,6 +53,18 @@ const SimpleModelManager = () => {
   const [configs, setConfigs] = useState<Record<string, ModelConfig>>({});
   const [providers, setProviders] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingUseCase, setEditingUseCase] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<EditForm>({
+    provider: '',
+    model_name: '',
+    temperature: 0,
+    max_tokens: 0,
+    timeout_seconds: 0,
+    cost_per_1k_tokens: 0,
+    fallback_provider: '',
+    fallback_model: '',
+  });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadConfigs();
@@ -53,6 +86,57 @@ const SimpleModelManager = () => {
     }
   };
 
+  const openEdit = (useCase: string) => {
+    const config = configs[useCase];
+    setEditForm({
+      provider: config.provider,
+      model_name: config.model,
+      temperature: config.temperature,
+      max_tokens: config.max_tokens,
+      timeout_seconds: config.timeout,
+      cost_per_1k_tokens: config.cost_per_1k,
+      fallback_provider: config.fallback_provider || '',
+      fallback_model: config.fallback_model || '',
+    });
+    setEditingUseCase(useCase);
+  };
+
+  const saveConfig = async () => {
+    if (!editingUseCase) return;
+
+    setSaving(true);
+    try {
+      const updates: Record<string, any> = {
+        provider: editForm.provider,
+        model_name: editForm.model_name,
+        temperature: editForm.temperature,
+        max_tokens: editForm.max_tokens,
+        timeout_seconds: editForm.timeout_seconds,
+        cost_per_1k_tokens: editForm.cost_per_1k_tokens,
+      };
+
+      if (editForm.fallback_provider) {
+        updates.fallback_provider = editForm.fallback_provider;
+        updates.fallback_model = editForm.fallback_model;
+      }
+
+      const { error } = await backendApi.put(
+        `/v1/models/config/${editingUseCase}`,
+        updates
+      );
+
+      if (error) throw error;
+
+      toast.success(`Updated ${editingUseCase} model config`);
+      setEditingUseCase(null);
+      await loadConfigs();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update config');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -67,74 +151,184 @@ const SimpleModelManager = () => {
   const useCases = Object.keys(configs);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
-              AI Model Configuration
-            </CardTitle>
-            <CardDescription>
-              {useCases.length} use cases configured across {providers.length} providers
-            </CardDescription>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Bot className="h-5 w-5" />
+                AI Model Configuration
+              </CardTitle>
+              <CardDescription>
+                {useCases.length} use cases configured across {providers.length} providers
+              </CardDescription>
+            </div>
+            <Button onClick={loadConfigs} variant="ghost" size="sm">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </div>
-          <Button onClick={loadConfigs} variant="ghost" size="sm">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {useCases.map((useCase) => {
-          const config = configs[useCase];
-          const meta = USE_CASE_META[useCase] || { label: useCase, icon: Bot, color: "bg-gray-100 text-gray-700" };
-          const Icon = meta.icon;
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {useCases.map((useCase) => {
+            const config = configs[useCase];
+            const meta = USE_CASE_META[useCase] || { label: useCase, icon: Bot, color: "bg-gray-100 text-gray-700" };
+            const Icon = meta.icon;
 
-          return (
-            <div key={useCase} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className={`p-2 rounded-md ${meta.color}`}>
-                  <Icon className="h-4 w-4" />
+            return (
+              <div key={useCase} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className={`p-2 rounded-md ${meta.color}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm">{meta.label}</span>
+                      <Badge variant="outline" className="text-xs font-mono">
+                        {config.provider}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground font-mono truncate">
+                      {config.model}
+                    </div>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-sm">{meta.label}</span>
-                    <Badge variant="outline" className="text-xs font-mono">
-                      {config.provider}
+
+                <div className="flex items-center gap-4 text-xs text-muted-foreground shrink-0">
+                  {config.max_tokens > 0 && (
+                    <span title="Max tokens">{config.max_tokens} tok</span>
+                  )}
+                  <span title="Timeout">{config.timeout}s</span>
+                  {config.fallback_provider && (
+                    <Badge variant="secondary" className="text-xs">
+                      fallback: {config.fallback_provider}/{config.fallback_model}
                     </Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground font-mono truncate">
-                    {config.model}
-                  </div>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => openEdit(useCase)}
+                    title="Edit configuration"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
+            );
+          })}
 
-              <div className="flex items-center gap-4 text-xs text-muted-foreground shrink-0">
-                {config.max_tokens > 0 && (
-                  <span title="Max tokens">{config.max_tokens} tok</span>
-                )}
-                <span title="Timeout">{config.timeout}s</span>
-                {config.fallback_provider && (
-                  <Badge variant="secondary" className="text-xs">
-                    fallback: {config.fallback_provider}/{config.fallback_model}
-                  </Badge>
-                )}
+          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Settings className="h-4 w-4 text-muted-foreground mt-0.5" />
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p><strong>Providers:</strong> {providers.join(", ")}</p>
+                <p>Click the edit icon on any model to update its configuration.</p>
               </div>
             </div>
-          );
-        })}
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-          <div className="flex items-start gap-3">
-            <Settings className="h-4 w-4 text-muted-foreground mt-0.5" />
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p><strong>Providers:</strong> {providers.join(", ")}</p>
-              <p>Model configs are stored in <code className="bg-muted px-1 rounded">app_ai_model_config</code> and can be updated via <code className="bg-muted px-1 rounded">PUT /v1/models/config/{'<use_case>'}</code></p>
+      {/* Edit Dialog */}
+      <Dialog open={!!editingUseCase} onOpenChange={(open) => !open && setEditingUseCase(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              Edit {editingUseCase ? (USE_CASE_META[editingUseCase]?.label || editingUseCase) : ''} Config
+            </DialogTitle>
+            <DialogDescription>
+              Update model provider, parameters, and fallback settings.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Provider</Label>
+                <Input
+                  value={editForm.provider}
+                  onChange={(e) => setEditForm({ ...editForm, provider: e.target.value })}
+                  placeholder="openai"
+                />
+              </div>
+              <div>
+                <Label>Model Name</Label>
+                <Input
+                  value={editForm.model_name}
+                  onChange={(e) => setEditForm({ ...editForm, model_name: e.target.value })}
+                  placeholder="gpt-4o-mini"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Temperature</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="2"
+                  value={editForm.temperature}
+                  onChange={(e) => setEditForm({ ...editForm, temperature: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <Label>Max Tokens</Label>
+                <Input
+                  type="number"
+                  value={editForm.max_tokens}
+                  onChange={(e) => setEditForm({ ...editForm, max_tokens: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <Label>Timeout (s)</Label>
+                <Input
+                  type="number"
+                  value={editForm.timeout_seconds}
+                  onChange={(e) => setEditForm({ ...editForm, timeout_seconds: parseInt(e.target.value) || 30 })}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Cost per 1K tokens</Label>
+              <Input
+                type="number"
+                step="0.00001"
+                value={editForm.cost_per_1k_tokens}
+                onChange={(e) => setEditForm({ ...editForm, cost_per_1k_tokens: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Fallback Provider</Label>
+                <Input
+                  value={editForm.fallback_provider}
+                  onChange={(e) => setEditForm({ ...editForm, fallback_provider: e.target.value })}
+                  placeholder="groq (optional)"
+                />
+              </div>
+              <div>
+                <Label>Fallback Model</Label>
+                <Input
+                  value={editForm.fallback_model}
+                  onChange={(e) => setEditForm({ ...editForm, fallback_model: e.target.value })}
+                  placeholder="llama-3.3-70b-versatile"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingUseCase(null)}>
+              <X className="h-4 w-4 mr-1" />
+              Cancel
+            </Button>
+            <Button onClick={saveConfig} disabled={saving}>
+              <Save className="h-4 w-4 mr-1" />
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

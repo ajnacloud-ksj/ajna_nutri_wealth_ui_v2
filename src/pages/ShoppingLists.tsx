@@ -177,12 +177,21 @@ const ShoppingLists = () => {
   };
 
   const deleteList = async (id: string) => {
+    // Optimistic removal from UI immediately
+    const previousLists = lists;
+    setLists((prev) => prev.filter((l) => l.id !== id));
+    if (selectedList?.id === id) {
+      setSelectedList(null);
+      setPrepareResult(null);
+    }
     try {
       await backendApi.delete(`/v1/shopping-lists/${id}`);
       toast.success("List deleted");
-      if (selectedList?.id === id) setSelectedList(null);
-      fetchLists();
+      // Force refresh to ensure consistency with backend
+      await fetchLists();
     } catch (e: any) {
+      // Revert on failure
+      setLists(previousLists);
       toast.error("Failed to delete list");
     }
   };

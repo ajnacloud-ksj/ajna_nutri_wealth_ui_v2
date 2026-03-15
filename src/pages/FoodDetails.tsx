@@ -23,7 +23,7 @@ const FoodDetails = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editedData, setEditedData] = useState<Partial<FoodEntry>>({});
-  const [itemsOpen, setItemsOpen] = useState(false);
+  const [itemsOpen, setItemsOpen] = useState(true);
 
   useEffect(() => {
     if (!user) {

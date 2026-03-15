@@ -54,6 +54,7 @@ const Admin = lazy(() => import("./pages/Admin"));
 const Reconciliation = lazy(() => import("./pages/Reconciliation"));
 const ShoppingLists = lazy(() => import("./pages/ShoppingLists"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const PrivacySecurity = lazy(() => import("./pages/PrivacySecurity"));
 
 // Caretaker pages
 const CaretakerSettings = lazy(() => import("./pages/CaretakerSettings"));
@@ -142,6 +143,9 @@ function AppOptimized() {
                         <Route path="/insights" element={<PrivateRoute><Insights /></PrivateRoute>} />
                         <Route path="/reconciliation" element={<PrivateRoute><Reconciliation /></PrivateRoute>} />
                         <Route path="/billing" element={<PrivateRoute><Billing /></PrivateRoute>} />
+
+                        {/* Privacy & Account */}
+                        <Route path="/privacy" element={<PrivateRoute><PrivacySecurity /></PrivateRoute>} />
 
                         {/* Admin */}
                         <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />

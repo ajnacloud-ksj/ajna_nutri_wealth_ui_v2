@@ -352,7 +352,7 @@ const Food = () => {
       }
 
       toast.success("Food entry deleted successfully");
-      await fetchFoodEntries(); // Await the refresh
+      setFoodEntries((prev) => prev.filter((e) => e.id !== id));
     } catch (error: any) {
       console.error('Error deleting food entry:', error);
       toast.error("Failed to delete food entry");

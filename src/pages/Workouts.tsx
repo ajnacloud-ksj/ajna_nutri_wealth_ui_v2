@@ -127,7 +127,7 @@ const Workouts = () => {
       if (error) throw error;
 
       toast.success("Workout deleted successfully");
-      fetchWorkouts();
+      setWorkouts((prev) => prev.filter((w) => w.id !== id));
     } catch (error: any) {
       console.error('Error deleting workout:', error);
       toast.error("Failed to delete workout");

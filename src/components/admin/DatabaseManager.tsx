@@ -16,6 +16,7 @@ import {
   Zap,
   Search,
   Play,
+  RotateCcw,
 } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
@@ -71,6 +72,11 @@ const DatabaseManager = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetConfirm, setResetConfirm] = useState("");
   const [showReset, setShowReset] = useState(false);
+
+  // Reset table state
+  const [resettingSingle, setResettingSingle] = useState<string | null>(null);
+  const [resetResults, setResetResults] = useState<Record<string, { reset: boolean; message: string }>>({});
+  const [resetConfirmTable, setResetConfirmTable] = useState<string | null>(null);
 
   // Query state
   const [querySql, setQuerySql] = useState("");
@@ -214,6 +220,23 @@ const DatabaseManager = () => {
       toast.error(err?.message || "Optimization failed");
     } finally {
       setOptimizeAllLoading(false);
+    }
+  };
+
+  const handleResetTable = async (table: string) => {
+    setResettingSingle(table);
+    try {
+      const { data, error } = await backendApi.post("/v1/admin/database/reset-table", { table });
+      if (error) throw error;
+      const result = data as any;
+      setResetResults((prev) => ({ ...prev, [table]: { reset: result.reset, message: result.message } }));
+      setResetConfirmTable(null);
+      toast.success(`Reset ${table} successfully`);
+    } catch (err: any) {
+      setResetResults((prev) => ({ ...prev, [table]: { reset: false, message: err?.message || "Failed" } }));
+      toast.error(`Failed to reset ${table}: ${err?.message}`);
+    } finally {
+      setResettingSingle(null);
     }
   };
 
@@ -430,6 +453,92 @@ const DatabaseManager = () => {
                   return totalSaved > 0 ? <span>Saved {formatBytes(totalSaved)}</span> : null;
                 })()}
               </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Reset Individual Tables */}
+      <Card className="border border-red-100">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-red-500" />
+              Reset Tables
+            </CardTitle>
+            {tables.length === 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchTables}
+                disabled={tablesLoading}
+              >
+                {tablesLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                <span className="ml-1.5">Load Tables</span>
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-600 mb-4">
+            Drop and recreate individual tables. All data in the table will be permanently deleted. The table schema is preserved.
+          </p>
+
+          {tables.length > 0 && (
+            <div className="space-y-1.5">
+              {tables.map((table) => {
+                const result = resetResults[table];
+                return (
+                  <div key={table} className="flex items-center justify-between p-2 rounded-lg border border-gray-100 hover:bg-gray-50">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Database className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                      <span className="text-xs font-mono text-gray-700 truncate">{table}</span>
+                      {result && (
+                        <Badge variant="secondary" className={`text-[10px] shrink-0 ${result.reset ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                          {result.reset ? "Reset" : "Failed"}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {resetConfirmTable === table ? (
+                        <>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            disabled={resettingSingle === table}
+                            onClick={() => handleResetTable(table)}
+                          >
+                            {resettingSingle === table ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              "Confirm"
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => setResetConfirmTable(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+                          disabled={resettingSingle !== null}
+                          onClick={() => setResetConfirmTable(table)}
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>

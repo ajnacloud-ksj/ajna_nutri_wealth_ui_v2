@@ -80,8 +80,9 @@ const Receipts = () => {
   const deleteReceipt = async (id: string) => {
     try {
       await backendApi.delete(`/v1/app_receipts/${id}`);
+      // Optimistically remove from local state immediately (avoids cache staleness)
+      setReceipts((prev) => prev.filter((r) => r.id !== id));
       toast.success("Receipt deleted successfully");
-      fetchReceipts();
     } catch (error: any) {
       console.error('Error deleting receipt:', error);
       toast.error("Failed to delete receipt");

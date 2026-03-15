@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,8 @@ import {
   EyeOff,
   Globe,
   Key,
+  Brain,
+  ArrowLeft,
 } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
@@ -24,6 +27,7 @@ import SidebarLayout from "@/components/layout/SidebarLayout";
 
 const PrivacySecurity = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [exportLoading, setExportLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [showDelete, setShowDelete] = useState(false);
@@ -119,10 +123,10 @@ const PrivacySecurity = () => {
     { category: "Receipts", items: "Receipt images, purchase items, amounts" },
     { category: "Workouts", items: "Exercise descriptions, duration, calories" },
     { category: "Shopping Lists", items: "List names, items, categories" },
+    { category: "Bank Statements", items: "Uploaded statements for reconciliation against receipts" },
   ];
 
-  return (
-    <SidebarLayout>
+  const content = (
       <div className="space-y-6 max-w-3xl">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
@@ -186,8 +190,8 @@ const PrivacySecurity = () => {
           </CardContent>
         </Card>
 
-        {/* Your Data Rights */}
-        <Card>
+        {/* Your Data Rights - actions only for logged in users */}
+        {user && <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Your Data Rights</CardTitle>
           </CardHeader>
@@ -279,25 +283,57 @@ const PrivacySecurity = () => {
               )}
             </div>
           </CardContent>
-        </Card>
+        </Card>}
 
-        {/* Account Info */}
-        <Card className="border border-gray-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3 text-sm text-gray-500">
-              <Shield className="h-4 w-4" />
-              <span>
-                Signed in as <span className="font-medium text-gray-700">{user?.email}</span>
-              </span>
-              <Badge variant="secondary" className="text-xs">
-                <Lock className="h-3 w-3 mr-1" />
-                Encrypted
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Account Info - only for logged in users */}
+        {user && (
+          <Card className="border border-gray-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 text-sm text-gray-500">
+                <Shield className="h-4 w-4" />
+                <span>
+                  Signed in as <span className="font-medium text-gray-700">{user?.email}</span>
+                </span>
+                <Badge variant="secondary" className="text-xs">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Encrypted
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
-    </SidebarLayout>
+  );
+
+  // Logged-in users get sidebar layout
+  if (user) {
+    return <SidebarLayout>{content}</SidebarLayout>;
+  }
+
+  // Public visitors get a standalone page with nav
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50/30">
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200/50">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <button onClick={() => navigate("/")} className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center">
+                <Brain className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+                Aro
+              </span>
+            </button>
+            <Button onClick={() => navigate("/auth")} className="bg-green-600 hover:bg-green-700 text-white px-6">
+              Sign In
+            </Button>
+          </div>
+        </div>
+      </nav>
+      <div className="container mx-auto px-6 py-12">
+        {content}
+      </div>
+    </div>
   );
 };
 

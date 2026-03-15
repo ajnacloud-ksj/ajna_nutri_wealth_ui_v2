@@ -118,6 +118,7 @@ function AppOptimized() {
                         <Route path="/" element={<PublicRoute><SimplifiedIndex /></PublicRoute>} />
                         <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
                         <Route path="/pricing" element={<Pricing />} />
+                        <Route path="/privacy" element={<PrivacySecurity />} />
 
                         {/* Protected Routes - Core Features */}
                         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
@@ -143,9 +144,6 @@ function AppOptimized() {
                         <Route path="/insights" element={<PrivateRoute><Insights /></PrivateRoute>} />
                         <Route path="/reconciliation" element={<PrivateRoute><Reconciliation /></PrivateRoute>} />
                         <Route path="/billing" element={<PrivateRoute><Billing /></PrivateRoute>} />
-
-                        {/* Privacy & Account */}
-                        <Route path="/privacy" element={<PrivateRoute><PrivacySecurity /></PrivateRoute>} />
 
                         {/* Admin */}
                         <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />

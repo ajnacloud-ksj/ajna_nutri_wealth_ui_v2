@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Brain, Heart, Shield, Users, ArrowRight, CheckCircle,
-  Camera, FileText, Dumbbell, ShoppingCart, BarChart3, Mic
+  Camera, FileText, Dumbbell, ShoppingCart, BarChart3, Mic,
+  Lock, EyeOff, Globe
 } from "lucide-react";
 
 const SimplifiedIndex = () => {
@@ -220,7 +221,7 @@ const SimplifiedIndex = () => {
               </CardHeader>
               <CardContent className="pt-0 text-center">
                 <CardDescription className="text-gray-600 leading-relaxed">
-                  See spending trends by vendor, category, and time period. Reconcile bank statements against your receipt data.
+                  Upload bank statements and receipts. See spending trends by vendor, category, and time period with automatic reconciliation.
                 </CardDescription>
               </CardContent>
             </Card>
@@ -283,6 +284,65 @@ const SimplifiedIndex = () => {
         </div>
       </section>
 
+      {/* Security & Privacy */}
+      <section className="py-20 px-6 bg-white">
+        <div className="container mx-auto">
+          <div className="max-w-4xl mx-auto text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full text-green-700 text-sm font-medium mb-6">
+              <Shield className="h-4 w-4" />
+              Your Data. Your Control.
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Security & Privacy Built In
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Your health and financial data deserves the highest level of protection. Every piece of data is isolated, encrypted, and fully under your control.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <div className="text-center p-6 rounded-xl bg-gray-50">
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Lock className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Encrypted & Isolated</h3>
+              <p className="text-sm text-gray-600">
+                All data is encrypted at rest (AES-256) and in transit (TLS). Each account is fully isolated — no one else can access your data.
+              </p>
+            </div>
+            <div className="text-center p-6 rounded-xl bg-gray-50">
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <EyeOff className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">No Data Sharing</h3>
+              <p className="text-sm text-gray-600">
+                We never sell, share, or provide your personal data to third parties. Your photos are analyzed by AI and never stored by AI providers.
+              </p>
+            </div>
+            <div className="text-center p-6 rounded-xl bg-gray-50">
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Globe className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Export & Delete Anytime</h3>
+              <p className="text-sm text-gray-600">
+                Download all your data as JSON or permanently delete your account at any time. You are always in control.
+              </p>
+            </div>
+          </div>
+
+          <div className="text-center mt-8">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/privacy")}
+              className="text-green-600 border-green-200 hover:bg-green-50"
+            >
+              <Shield className="h-4 w-4 mr-2" />
+              Learn More About Privacy & Security
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-6 bg-gradient-to-r from-green-600 to-green-700">
         <div className="container mx-auto text-center">
@@ -314,9 +374,15 @@ const SimplifiedIndex = () => {
             </div>
             <span className="text-xl font-bold">Aro</span>
           </div>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-400 text-sm mb-3">
             AI-Powered Food, Fitness & Finance Tracking
           </p>
+          <button
+            onClick={() => navigate("/privacy")}
+            className="text-gray-500 hover:text-green-400 text-xs underline underline-offset-2 transition-colors"
+          >
+            Privacy & Security
+          </button>
         </div>
       </footer>
     </div>

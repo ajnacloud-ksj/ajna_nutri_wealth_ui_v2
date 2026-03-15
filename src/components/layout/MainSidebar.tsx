@@ -107,6 +107,7 @@ export const MainSidebar = () => {
 
   // Only show billing if user is not subscribed or needs to manage subscription
   const accountItems = [
+    { name: "Privacy & Security", href: "/privacy", icon: Shield },
     ...((!isSubscribed || isAdmin) ? [{ name: "Billing", href: "/billing", icon: CreditCard }] : []),
   ];
 

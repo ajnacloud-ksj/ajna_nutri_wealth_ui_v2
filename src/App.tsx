@@ -38,6 +38,7 @@ const Billing = lazy(() => import("./pages/Billing"));
 const Reconciliation = lazy(() => import("./pages/Reconciliation"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Queue = lazy(() => import("./pages/Queue"));
+const PrivacySecurity = lazy(() => import("./pages/PrivacySecurity"));
 
 // Route components
 import PublicRoute from "./components/routes/PublicRoute";
@@ -99,6 +100,9 @@ function App() {
                       <Route path="/insights" element={<PrivateRoute><Insights /></PrivateRoute>} />
                       <Route path="/billing" element={<PrivateRoute><Billing /></PrivateRoute>} />
                       <Route path="/reconciliation" element={<PrivateRoute><Reconciliation /></PrivateRoute>} />
+
+                      {/* Privacy & Account */}
+                      <Route path="/privacy" element={<PrivateRoute><PrivacySecurity /></PrivateRoute>} />
 
                       {/* Admin */}
                       <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />

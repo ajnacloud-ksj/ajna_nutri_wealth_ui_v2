@@ -14,6 +14,8 @@ import {
   XCircle,
   AlertTriangle,
   Zap,
+  Search,
+  Play,
 } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
@@ -69,6 +71,12 @@ const DatabaseManager = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetConfirm, setResetConfirm] = useState("");
   const [showReset, setShowReset] = useState(false);
+
+  // Query state
+  const [querySql, setQuerySql] = useState("");
+  const [queryLoading, setQueryLoading] = useState(false);
+  const [queryResult, setQueryResult] = useState<{ columns: string[]; rows: any[][]; row_count: number; truncated: boolean } | null>(null);
+  const [queryError, setQueryError] = useState<string | null>(null);
 
   // Optimize state
   const [tables, setTables] = useState<string[]>([]);
@@ -206,6 +214,25 @@ const DatabaseManager = () => {
       toast.error(err?.message || "Optimization failed");
     } finally {
       setOptimizeAllLoading(false);
+    }
+  };
+
+  const handleRunQuery = async () => {
+    if (!querySql.trim()) return;
+    setQueryLoading(true);
+    setQueryResult(null);
+    setQueryError(null);
+    try {
+      const { data, error } = await backendApi.post("/v1/admin/database/query", {
+        sql: querySql.trim(),
+        limit: 100,
+      });
+      if (error) throw error;
+      setQueryResult(data as any);
+    } catch (err: any) {
+      setQueryError(err?.message || "Query failed");
+    } finally {
+      setQueryLoading(false);
     }
   };
 
@@ -405,6 +432,91 @@ const DatabaseManager = () => {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* SQL Query */}
+      <Card className="border border-indigo-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Search className="h-5 w-5 text-indigo-600" />
+            Query Tables
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-600 mb-3">
+            Run read-only SQL queries against the database. Only SELECT statements are allowed. Results are limited to 100 rows.
+          </p>
+          <div className="space-y-3">
+            <textarea
+              value={querySql}
+              onChange={(e) => setQuerySql(e.target.value)}
+              placeholder={`SELECT * FROM app_users_v4 LIMIT 10`}
+              className="w-full h-24 p-3 text-sm font-mono border border-gray-200 rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                  handleRunQuery();
+                }
+              }}
+            />
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleRunQuery}
+                disabled={queryLoading || !querySql.trim()}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                {queryLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Play className="h-4 w-4 mr-2" />
+                )}
+                {queryLoading ? "Running..." : "Run Query"}
+              </Button>
+              <span className="text-xs text-gray-400">Cmd+Enter to run</span>
+            </div>
+
+            {queryError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700 font-mono">{queryError}</p>
+              </div>
+            )}
+
+            {queryResult && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span>{queryResult.row_count} row{queryResult.row_count !== 1 ? "s" : ""}</span>
+                  <span>{queryResult.columns.length} column{queryResult.columns.length !== 1 ? "s" : ""}</span>
+                  {queryResult.truncated && (
+                    <Badge variant="secondary" className="text-[10px]">Truncated</Badge>
+                  )}
+                </div>
+                <div className="overflow-auto max-h-96 border border-gray-200 rounded-lg">
+                  <table className="w-full text-xs">
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        {queryResult.columns.map((col) => (
+                          <th key={col} className="px-3 py-2 text-left font-medium text-gray-700 border-b whitespace-nowrap">
+                            {col}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {queryResult.rows.map((row, i) => (
+                        <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                          {row.map((cell, j) => (
+                            <td key={j} className="px-3 py-1.5 text-gray-600 font-mono whitespace-nowrap max-w-xs truncate">
+                              {cell === null ? <span className="text-gray-300 italic">null</span> : String(cell)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 

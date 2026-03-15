@@ -34,6 +34,8 @@ const Receipts = () => {
   const [selectedVendor, setSelectedVendor] = useState('all');
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const sortOptions = [
     { value: 'date-desc', label: 'Date (newest first)' },
@@ -114,6 +116,16 @@ const Receipts = () => {
       });
     }
 
+    if (dateFrom || dateTo) {
+      filtered = filtered.filter(receipt => {
+        const receiptDate = receipt.receipt_date || receipt.created_at || '';
+        const d = receiptDate.slice(0, 10); // YYYY-MM-DD
+        if (dateFrom && d < dateFrom) return false;
+        if (dateTo && d > dateTo) return false;
+        return true;
+      });
+    }
+
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'date-desc': return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -127,20 +139,22 @@ const Receipts = () => {
     });
 
     return filtered;
-  }, [receipts, searchTerm, sortBy, selectedVendor, minAmount, maxAmount]);
+  }, [receipts, searchTerm, sortBy, selectedVendor, minAmount, maxAmount, dateFrom, dateTo]);
 
   const uniqueVendors = useMemo(() => getUniqueVendors(receipts), [receipts]);
 
-  const hasActiveFilters = selectedVendor !== 'all' || minAmount !== '' || maxAmount !== '';
+  const hasActiveFilters = selectedVendor !== 'all' || minAmount !== '' || maxAmount !== '' || dateFrom !== '' || dateTo !== '';
 
   const handleClearFilters = () => {
     setSelectedVendor('all');
     setMinAmount('');
     setMaxAmount('');
+    setDateFrom('');
+    setDateTo('');
   };
 
   const ReceiptAdvancedFilters = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="space-y-2">
         <Label className="text-sm font-medium text-gray-700">Vendor</Label>
         <Select value={selectedVendor} onValueChange={setSelectedVendor}>
@@ -156,6 +170,23 @@ const Receipts = () => {
             ))}
           </SelectContent>
         </Select>
+      </div>
+      <div className="space-y-2">
+        <Label className="text-sm font-medium text-gray-700">Date Range</Label>
+        <div className="flex gap-2">
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="border-gray-200 focus:border-green-400"
+          />
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="border-gray-200 focus:border-green-400"
+          />
+        </div>
       </div>
       <div className="space-y-2">
         <Label className="text-sm font-medium text-gray-700">Amount Range</Label>

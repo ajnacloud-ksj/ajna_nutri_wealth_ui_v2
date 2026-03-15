@@ -26,6 +26,7 @@ import Workouts from "./pages/Workouts";
 import Receipts from "./pages/Receipts";
 import Capture from "./pages/Capture";
 import NotFound from "./pages/NotFound";
+import ShoppingLists from "./pages/ShoppingLists";
 
 // Lazy-loaded pages (detail views, heavy charts, admin)
 const FoodDetails = lazy(() => import("./pages/FoodDetails"));
@@ -37,7 +38,6 @@ const Billing = lazy(() => import("./pages/Billing"));
 const Reconciliation = lazy(() => import("./pages/Reconciliation"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Queue = lazy(() => import("./pages/Queue"));
-const ShoppingLists = lazy(() => import("./pages/ShoppingLists"));
 
 // Route components
 import PublicRoute from "./components/routes/PublicRoute";

@@ -13,7 +13,7 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
-  ShieldCheck,
+  Zap,
 } from "lucide-react";
 import { backendApi } from "@/lib/api/client";
 import { toast } from "sonner";
@@ -32,6 +32,32 @@ interface SetupResult {
   failures: number;
 }
 
+interface CompactStats {
+  files_before: number;
+  files_after: number;
+  files_compacted: number;
+  bytes_before: number;
+  bytes_after: number;
+  bytes_saved: number;
+  compaction_time_ms: number;
+  snapshots_expired: number;
+}
+
+interface CompactResult {
+  table: string;
+  compacted: boolean;
+  reason?: string;
+  stats?: CompactStats;
+}
+
+const formatBytes = (bytes: number) => {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+};
+
 const DatabaseManager = () => {
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
@@ -43,6 +69,13 @@ const DatabaseManager = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetConfirm, setResetConfirm] = useState("");
   const [showReset, setShowReset] = useState(false);
+
+  // Optimize state
+  const [tables, setTables] = useState<string[]>([]);
+  const [tablesLoading, setTablesLoading] = useState(false);
+  const [optimizeAllLoading, setOptimizeAllLoading] = useState(false);
+  const [optimizingSingle, setOptimizingSingle] = useState<string | null>(null);
+  const [compactResults, setCompactResults] = useState<CompactResult[]>([]);
 
   const checkHealth = useCallback(async () => {
     setHealthLoading(true);
@@ -121,6 +154,58 @@ const DatabaseManager = () => {
       toast.error(err?.message || "Reset failed");
     } finally {
       setResetLoading(false);
+    }
+  };
+
+  const fetchTables = useCallback(async () => {
+    setTablesLoading(true);
+    try {
+      const { data, error } = await backendApi.get("/v1/admin/database/tables");
+      if (error) throw error;
+      setTables((data as any)?.tables || []);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to load tables");
+    } finally {
+      setTablesLoading(false);
+    }
+  }, []);
+
+  const handleOptimizeTable = async (table: string) => {
+    setOptimizingSingle(table);
+    try {
+      const { data, error } = await backendApi.post("/v1/admin/database/optimize", {
+        table,
+        force: true,
+      });
+      if (error) throw error;
+      const result = data as CompactResult;
+      setCompactResults((prev) => [result, ...prev.filter((r) => r.table !== table)]);
+      if (result.compacted) {
+        toast.success(`Optimized ${table}: ${result.stats?.files_before} → ${result.stats?.files_after} files`);
+      } else {
+        toast.info(`${table}: ${result.reason || "Already optimized"}`);
+      }
+    } catch (err: any) {
+      toast.error(`Failed to optimize ${table}: ${err?.message}`);
+    } finally {
+      setOptimizingSingle(null);
+    }
+  };
+
+  const handleOptimizeAll = async () => {
+    setOptimizeAllLoading(true);
+    setCompactResults([]);
+    try {
+      const { data, error } = await backendApi.post("/v1/admin/database/optimize-all", {});
+      if (error) throw error;
+      const results = (data as any)?.results || [];
+      setCompactResults(results);
+      const compacted = results.filter((r: CompactResult) => r.compacted).length;
+      toast.success(`Optimization complete: ${compacted}/${results.length} tables compacted`);
+    } catch (err: any) {
+      toast.error(err?.message || "Optimization failed");
+    } finally {
+      setOptimizeAllLoading(false);
     }
   };
 
@@ -225,6 +310,98 @@ const DatabaseManager = () => {
                     <span className="text-red-700 font-mono">{t}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Optimize / Compact */}
+      <Card className="border border-amber-200">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Zap className="h-5 w-5 text-amber-600" />
+              Optimize Tables
+            </CardTitle>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchTables}
+                disabled={tablesLoading}
+              >
+                {tablesLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                <span className="ml-1.5">Load Tables</span>
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleOptimizeAll}
+                disabled={optimizeAllLoading || tables.length === 0}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                {optimizeAllLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Zap className="h-3.5 w-3.5 mr-1.5" />}
+                {optimizeAllLoading ? "Optimizing..." : "Optimize All"}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-600 mb-4">
+            Compact small Parquet files into larger ones for faster queries. Each write creates a new small file — compaction merges them. Safe to run anytime.
+          </p>
+
+          {tables.length > 0 && (
+            <div className="space-y-1.5 mb-4">
+              {tables.map((table) => {
+                const result = compactResults.find((r) => r.table === table);
+                return (
+                  <div key={table} className="flex items-center justify-between p-2 rounded-lg border border-gray-100 hover:bg-gray-50">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Database className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                      <span className="text-xs font-mono text-gray-700 truncate">{table}</span>
+                      {result && (
+                        result.compacted ? (
+                          <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700 shrink-0">
+                            {result.stats?.files_before} → {result.stats?.files_after} files
+                            {result.stats?.bytes_saved ? ` (saved ${formatBytes(result.stats.bytes_saved)})` : ""}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-[10px] shrink-0">
+                            {result.reason || "No change"}
+                          </Badge>
+                        )
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs shrink-0"
+                      disabled={optimizingSingle === table || optimizeAllLoading}
+                      onClick={() => handleOptimizeTable(table)}
+                    >
+                      {optimizingSingle === table ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Zap className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {compactResults.length > 0 && (
+            <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+              <p className="text-xs font-medium text-amber-800 mb-1">Optimization Summary</p>
+              <div className="flex gap-4 text-xs text-amber-700">
+                <span>{compactResults.filter((r) => r.compacted).length} compacted</span>
+                <span>{compactResults.filter((r) => !r.compacted).length} skipped</span>
+                {(() => {
+                  const totalSaved = compactResults.reduce((acc, r) => acc + (r.stats?.bytes_saved || 0), 0);
+                  return totalSaved > 0 ? <span>Saved {formatBytes(totalSaved)}</span> : null;
+                })()}
               </div>
             </div>
           )}
